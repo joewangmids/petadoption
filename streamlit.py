@@ -19,9 +19,13 @@ import altair as alt
 from datetime import datetime
 
 def load_data_from_s3(bucket, key):
-    """Loads a CSV from S3, showing errors in the app if it fails."""
     try:
-        s3 = boto3.client('s3')
+        s3 = boto3.client(
+            's3',
+            aws_access_key_id=st.secrets.aws.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=st.secrets.aws.AWS_SECRET_ACCESS_KEY,
+            region_name=st.secrets.aws.AWS_REGION
+        )
         obj = s3.get_object(Bucket=bucket, Key=key)
         return pd.read_csv(obj['Body'])
     except Exception as e:
