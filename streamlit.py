@@ -173,7 +173,7 @@ def color_score(val):
 
 st.title("🐾 Shelter Pet Priority Board")
 st.write("This board automatically surfaces the pets that need the most attention first.")
-st.write("Note: 'High Risk' means a pet is at a high risk of NOT being adopted")
+st.markdown("<p style='color: red;'>**Note: 'High Risk' means a pet is at a high risk of NOT being adopted**</p>", unsafe_allow_html=True)
 
 # Load the data
 df = load_data_from_s3(S3_BUCKET_NAME, FILE_KEY)
