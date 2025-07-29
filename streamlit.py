@@ -37,7 +37,7 @@ EMOJI_MAP = {
 }
 
 def generate_full_dashboard_html(pet_data):
-    score = pet_data.get('predicted_score', 0)
+    score = pet_data.get('adoption_score', 0)
     pet_id = pet_data.get('animal_id', 'N/A') # <-- CHANGE: Case updated
     recommended_team = pet_data.get('predicted_label_name', 'N/A')
     predicted_label = pet_data.get('predicted_label', 0)
@@ -112,7 +112,7 @@ if df is not None:
         if score <= 33: return "High Risk"
         if score <= 66: return "Medium Risk"
         return "Low Risk"
-    filtered_df['adoptability_category'] = filtered_df['predicted_score'].apply(get_adoptability_category)
+    filtered_df['adoptability_category'] = filtered_df['adoption_score'].apply(get_adoptability_category)
 
     with st.expander("Show Shelter-Wide Summary Dashboard", expanded=True):
         st.subheader("Pets by Adoptability")
@@ -128,12 +128,12 @@ if df is not None:
 
         st.subheader("Distribution of Adoption Scores")
         score_hist = alt.Chart(filtered_df).mark_bar().encode(
-            alt.X("predicted_score:Q", bin=alt.Bin(maxbins=20), title="Adoption Score"),
+            alt.X("adoption_score:Q", bin=alt.Bin(maxbins=20), title="Adoption Score"),
             alt.Y('count():Q', title="Number of Pets"),
         ).properties(height=250)
         st.altair_chart(score_hist, use_container_width=True)
 
-    sorted_df = filtered_df.sort_values(by="predicted_score", ascending=True)
+    sorted_df = filtered_df.sort_values(by="adoption_score", ascending=True)
     
     col1, col2 = st.columns([1, 1.2])
 
@@ -153,9 +153,9 @@ if df is not None:
         ).str.replace('SHAP-', '').str.strip()
 
         # --- CHANGE: Case updated for display columns ---
-        df_display = sorted_df[['animal_id', 'predicted_score', 'Primary_Concern']].rename(columns={
+        df_display = sorted_df[['animal_id', 'adoption_score', 'Primary_Concern']].rename(columns={
             'animal_id': 'Pet ID', 
-            'predicted_score': 'Score'
+            'adoption_score': 'Score'
         }).reset_index(drop=True)
         
         try:
