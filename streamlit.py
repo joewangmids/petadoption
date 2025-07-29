@@ -231,7 +231,7 @@ if df is not None:
                 .legend-color { width: 15px; height: 15px; margin-right: 8px; border-radius: 3px; }
             </style>
             <b>Score Legend:</b>
-            "<p style='color: red;'>**Note: 'High Risk' means a pet is at a high risk of NOT being adopted**</p>"
+            <p style='color: red;'>**Note: 'High Risk' means a pet is at a high risk of NOT being adopted**</p>
             """, unsafe_allow_html=True)
 
         leg1, leg2, leg3 = st.columns(3)
