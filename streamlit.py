@@ -9,6 +9,8 @@
 ## 7. [DONE] Adjust threshold
 ## Breed, intake type (x breed, y animal count and distribute by score)
 ## Build validation to check if shap value is <0 if threshold <50. Same for recommended team. And then reverse for predicted stay.
+# Look into app going to sleep problem.
+# Make filter global.
 
 
 import streamlit as st
@@ -180,6 +182,28 @@ df = load_data_from_s3(S3_BUCKET_NAME, FILE_KEY)
 
 if df is not None:
 
+    # --- SIDEBAR FILTERS ---
+    st.sidebar.header("Filter Options")
+
+    if 'intake_date' in df.columns:
+        df['intake_date'] = pd.to_datetime(df['intake_date'], errors='coerce')
+
+    # Create a copy of the dataframe to filter
+    filtered_df = df.copy()
+
+    # 1. Animal Type Filter
+    animal_types = sorted(df['animal_type'].dropna().unique())
+    selected_animal_types = st.sidebar.multiselect(
+        'Filter by Animal Type:',
+        options=animal_types,
+        default=animal_types # Default to all types selected
+    )
+
+    # Apply filters sequentially
+    if selected_animal_types:
+        filtered_df = filtered_df[filtered_df['animal_type'].isin(selected_animal_types)]
+
+
     # --- DATA PREPARATION FOR SUMMARY DASHBOARD ---
     
     # 1. Create adoptability category column
@@ -236,28 +260,6 @@ if df is not None:
             alt.Y('count():Q', title="Number of Pets"),
         ).properties(height=250)
         st.altair_chart(score_hist, use_container_width=True)
-
-# --- SIDEBAR FILTERS ---
-st.sidebar.header("Filter Options")
-
-if 'intake_date' in df.columns:
-    df['intake_date'] = pd.to_datetime(df['intake_date'], errors='coerce')
-
-# Create a copy of the dataframe to filter
-filtered_df = df.copy()
-
-# 1. Animal Type Filter
-animal_types = sorted(df['animal_type'].dropna().unique())
-selected_animal_types = st.sidebar.multiselect(
-    'Filter by Animal Type:',
-    options=animal_types,
-    default=animal_types # Default to all types selected
-)
-
-# Apply filters sequentially
-if selected_animal_types:
-    filtered_df = filtered_df[filtered_df['animal_type'].isin(selected_animal_types)]
-
 
     # --- TRIAGE BOARD DISPLAY ---
     sorted_df = filtered_df.sort_values(by="score", ascending=True)
