@@ -1,18 +1,3 @@
-# TODOs:
-## 0. Deploy on community cloud or AWS (if community cloud repo needs to be public, add secret manager, requirements.txt).
-## 1. [DONE] Troubleshoot "Top Factors Affecting Score" text template. < This is due to input data issue.
-## 2. [DONE] Add filter by animal type (need that data in s3 bucket)
-## 3. [DONE] Add filter for intake date range (today, last 1 week, last month, etc.) (need that data in s3 bucket)
-## 4. [DONE] Add responsible team (one outcome type for non-adopted)
-## 5. Clean up code
-## 6. Test with actual predictions.
-## 7. [DONE] Adjust threshold
-## Breed, intake type (x breed, y animal count and distribute by score)
-## Build validation to check if shap value is <0 if threshold <50. Same for recommended team. And then reverse for predicted stay.
-# Look into app going to sleep problem.
-# Make filter global.
-
-
 import streamlit as st
 import pandas as pd
 import io
@@ -106,32 +91,13 @@ def generate_full_dashboard_html(pet_data):
             .module {{ padding: 1rem; }}
             .progress-bar {{ height:8px; border-radius:4px; background-color:#e9ecef; }}
             .progress-fill {{ height:100%; border-radius:4px; }}
-            
-            /* CSS for Team Section */
             .team-section {{ background-color: #f8fafc; border-radius: 0.5rem; padding: 1rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); }}
             .team-header {{ display: flex; align-items: center; gap: 0.75rem; }}
             .team-avatar {{ background-color: #e0f2fe; padding: 0.75rem; border-radius: 9999px; }}
             .team-avatar i {{ color: #0ea5e9; }}
             .team-info h3 {{ font-weight: 600; font-size: 0.875rem; line-height: 1.25rem; }}
             .team-info .team-title {{ font-size: 0.75rem; line-height: 1rem; color: #64748b; }}
-            .expandable-trigger {{ cursor: pointer; display: flex; align-items: center; color: #0ea5e9; font-size: 0.875rem; margin-top: 0.75rem; }}
-            .expandable-trigger i {{ transition: transform 0.2s ease-in-out; margin-right: 0.25rem; }}
-            .expandable-content {{ max-height: 0; overflow: hidden; transition: max-height 0.3s ease-in-out; }}
-            .expandable-text {{ padding-top: 0.75rem; margin-top: 0.75rem; border-top: 1px solid #e2e8f0; font-size: 0.875rem; color: #475569; }}
         </style>
-        <script>
-            function toggleExpand(element) {{
-                const content = element.nextElementSibling;
-                const icon = element.querySelector('i');
-                if (content.style.maxHeight) {{
-                    content.style.maxHeight = null;
-                    icon.style.transform = 'rotate(0deg)';
-                }} else {{
-                    content.style.maxHeight = content.scrollHeight + 'px';
-                    icon.style.transform = 'rotate(90deg)';
-                }}
-            }}
-        </script>
     </head>
     <body>
         <div class="bg-white p-4 sm:p-6">
@@ -140,7 +106,6 @@ def generate_full_dashboard_html(pet_data):
                 <p class="text-sm text-gray-500">Pet ID: #{pet_id}</p>
             </div>
             <div class="flex flex-col gap-4 max-w-3xl mx-auto">
-
                 <div class="bg-gray-50 rounded-lg p-4 shadow-sm module">
                     <h2 class="text-lg font-bold text-gray-700 mb-2">Adoption Score</h2>
                     <h3 class="font-bold text-gray-700">Score: {score}</h3>
@@ -148,14 +113,11 @@ def generate_full_dashboard_html(pet_data):
                     <div class="mt-3"><span class="{progress_color} text-white px-3 py-0.5 rounded-full text-sm font-medium">{risk_category}</span></div>
                     <div class="mt-3 flex items-center gap-2 text-sm text-gray-700"><i class="fas fa-calendar-alt text-gray-500"></i><span>Predicted Stay: {predicted_stay}</span></div>
                 </div>
-
                 {team_html_module}
-
                 <div class="bg-gray-50 rounded-lg p-4 shadow-sm module">
                     <h2 class="text-lg font-bold text-gray-700 mb-2">Top Factors Affecting Score</h2>
                     <div class="space-y-2">{factors_html}</div>
                 </div>
-                
             </div>
         </div>
     </body>
@@ -181,8 +143,7 @@ st.markdown("<p style='color: red;'>**Note: 'High Risk' means a pet is at a high
 df = load_data_from_s3(S3_BUCKET_NAME, FILE_KEY)
 
 if df is not None:
-
-    # --- SIDEBAR FILTERS ---
+    
     st.sidebar.header("Filter Options")
 
     if 'intake_date' in df.columns:
@@ -202,8 +163,7 @@ if df is not None:
     # Apply filters sequentially
     if selected_animal_types:
         filtered_df = filtered_df[filtered_df['animal_type'].isin(selected_animal_types)]
-
-
+    
     # --- DATA PREPARATION FOR SUMMARY DASHBOARD ---
     
     # 1. Create adoptability category column
@@ -211,7 +171,7 @@ if df is not None:
         if score <= 33: return "High Risk"
         if score <= 66: return "Medium Risk"
         return "Low Risk"
-    df['adoptability_category'] = df['score'].apply(get_adoptability_category)
+    filtered_df['adoptability_category'] = filtered_df['score'].apply(get_adoptability_category) 
 
     # 2. Create predicted stay bins column
     def get_stay_bin(stay):
@@ -223,17 +183,15 @@ if df is not None:
             return "90+ Days"
         except (ValueError, TypeError):
             return "N/A"
-    df['stay_bin'] = df['predicted_stay'].apply(get_stay_bin)
+    filtered_df['stay_bin'] = filtered_df['predicted_stay'].apply(get_stay_bin) 
 
     # --- SUMMARY DASHBOARD ---
     with st.expander("Show Shelter-Wide Summary Dashboard", expanded=True):
         col1, col2 = st.columns([1, 1])
         
         with col1:
-
-            # Chart 1: Pets by Adoptability Category
             st.subheader("Pets by Adoptability")
-            category_chart = alt.Chart(df).mark_bar().encode(
+            category_chart = alt.Chart(filtered_df).mark_bar().encode(
                 x=alt.X('count():Q', title="Number of Pets"),
                 y=alt.Y('adoptability_category:N', title="Category", sort=['Low Risk', 'Medium Risk', 'High Risk']),
                 color=alt.Color('adoptability_category:N', 
@@ -243,19 +201,16 @@ if df is not None:
             ).properties(height=200)
             st.altair_chart(category_chart, use_container_width=True)
 
-
         with col2:
-            # Chart 2: Pets by Predicted Stay Length
             st.subheader("Pets by Predicted Stay")
-            stay_chart = alt.Chart(df).mark_bar().encode(
+            stay_chart = alt.Chart(filtered_df).mark_bar().encode(
                 x=alt.X('count():Q', title="Number of Pets"),
                 y=alt.Y('stay_bin:N', title="Predicted Stay", sort=['0-30 Days', '31-90 Days', '90+ Days', 'N/A'])
             ).properties(height=200)
             st.altair_chart(stay_chart, use_container_width=True)
 
-        # Chart 3: Distribution of Adoption Scores
         st.subheader("Distribution of Adoption Scores")
-        score_hist = alt.Chart(df).mark_bar().encode(
+        score_hist = alt.Chart(filtered_df).mark_bar().encode(
             alt.X("score:Q", bin=alt.Bin(maxbins=20), title="Adoption Score"),
             alt.Y('count():Q', title="Number of Pets"),
         ).properties(height=250)
@@ -286,10 +241,8 @@ if df is not None:
         with leg3:
             st.markdown("<div class='legend-item'><div class='legend-color' style='background-color:#06D6A0;'></div> Low Risk (≥ 50)</div>", unsafe_allow_html=True)
         
-
         st.write("Click on a row to view pet details")
         
-        # Prepare display dataframe
         df_display = sorted_df[['pet_id', 'score', 'factor_1_name']].rename(columns={
             'pet_id': 'Pet ID', 
             'score': 'Score', 
@@ -302,11 +255,10 @@ if df is not None:
                 use_container_width=True,
                 height=400,
                 hide_index=True,
-                on_select="rerun",  # This enables selection
-                selection_mode="single-row"  # Single row selection
+                on_select="rerun",
+                selection_mode="single-row"
             )
             
-            # Check if a row was selected
             if event.selection and len(event.selection.rows) > 0:
                 selected_idx = event.selection.rows[0]
                 selected_pet_id = df_display.iloc[selected_idx]['Pet ID']
@@ -315,28 +267,19 @@ if df is not None:
                     st.rerun()
                     
         except Exception as e:
-            # Fallback for older Streamlit versions
-            st.info("Row selection not available in this Streamlit version. Using alternative method.")
-            
-            # Display styled dataframe
             st.dataframe(
                 df_display.style.applymap(color_score, subset=['Score']),
                 use_container_width=True,
                 height=300
             )
-            
-            # Radio button selection as alternative
             if len(df_display) > 0:
                 pet_options = [f"Pet {row['Pet ID']} - Score: {row['Score']} - {row['Primary Concern']}" 
                               for _, row in df_display.iterrows()]
-                
                 selected_option = st.radio(
                     "Select a pet:",
                     options=pet_options,
                     index=0
                 )
-                
-                # Extract pet ID from selection
                 selected_pet_id = int(selected_option.split(" ")[1])
                 if st.session_state.selected_pet_id != selected_pet_id:
                     st.session_state.selected_pet_id = selected_pet_id
@@ -351,7 +294,7 @@ if df is not None:
                 full_detail_html = generate_full_dashboard_html(selected_pet_data)
                 st.components.v1.html(full_detail_html, height=700, scrolling=False)
             else:
-                st.info("Selected pet not found in filtered data.")
+                st.info("Selected pet not found in filtered data. Please clear filters or select another pet.")
         else:
             st.info("Click on a row to view pet details.")
 
