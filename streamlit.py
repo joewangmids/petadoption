@@ -136,9 +136,9 @@ def generate_full_dashboard_html(pet_data):
 
 def color_predicted_proba(val):
     """Color predicted_probas based on risk level"""
-    if val < 25:
+    if val < 0.25:
         return 'background-color: #FF6B6B; color: white'
-    elif val < 50:
+    elif val < 0.50:
         return 'background-color: #FFD166'
     else:
         return 'background-color: #06D6A0; color: white'
