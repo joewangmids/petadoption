@@ -119,7 +119,7 @@ def generate_full_dashboard_html(pet_data):
             <div class="flex flex-col gap-4 max-w-3xl mx-auto">
                 <div class="bg-gray-50 rounded-lg p-4 shadow-sm module">
                     <h2 class="text-lg font-bold text-gray-700 mb-2">Adoption Score</h2>
-                    <h3 class="font-bold text-gray-700">Score: {formatted_proba}%</h3>
+                    <h3 class="font-bold text-gray-700">Score: {formatted_proba}</h3>
                     <div class="progress-bar mt-1"><div class="progress-fill {progress_color}" style="width:{formatted_proba}%"></div></div>
                     <div class="mt-3"><span class="{progress_color} text-white px-3 py-0.5 rounded-full text-sm font-medium">{risk_category}</span></div>
                 </div>
