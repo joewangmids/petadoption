@@ -33,8 +33,8 @@ st.write(df.columns.T)
 st.set_page_config(layout="wide")
 
 # Initialize session state
-if 'selected_pet_id' not in st.session_state:
-    st.session_state.selected_pet_id = None
+if 'selected_animal_id' not in st.session_state:
+    st.session_state.selected_animal_id = None
 
 EMOJI_MAP = {
     "Breed": "🐕", "Age": "🎂", "Intake Type": "🏷️",
@@ -43,7 +43,7 @@ EMOJI_MAP = {
 
 def generate_full_dashboard_html(pet_data):
     predicted_proba = pet_data.get('predicted_proba', 0)
-    pet_id = pet_data.get('animal_id', 'N/A')
+    animal_id = pet_data.get('animal_id', 'N/A')
     # raw_predicted_stay = pet_data.get('predicted_stay', 'N/A')
     recommended_team = pet_data.get('recommended_team', 'N/A')
     
@@ -107,7 +107,7 @@ def generate_full_dashboard_html(pet_data):
         <div class="bg-white p-4 sm:p-6">
             <div class="mb-3">
                 <h1 class="text-2xl font-bold text-gray-800">Pet Adoptability Dashboard</h1>
-                <p class="text-sm text-gray-500">Pet ID: #{pet_id}</p>
+                <p class="text-sm text-gray-500">Pet ID: #{animal_id}</p>
             </div>
             <div class="flex flex-col gap-4 max-w-3xl mx-auto">
                 <div class="bg-gray-50 rounded-lg p-4 shadow-sm module">
@@ -247,8 +247,8 @@ if df is not None:
         
         st.write("Click on a row to view pet details")
         
-        df_display = sorted_df[['pet_id', 'predicted_proba', 'factor_1_name']].rename(columns={
-            'pet_id': 'Pet ID', 
+        df_display = sorted_df[['animal_id', 'predicted_proba', 'factor_1_name']].rename(columns={
+            'animal_id': 'Pet ID', 
             'predicted_proba': 'predicted_proba', 
             'factor_1_name': 'Primary Concern'
         }).reset_index(drop=True)
@@ -265,9 +265,9 @@ if df is not None:
             
             if event.selection and len(event.selection.rows) > 0:
                 selected_idx = event.selection.rows[0]
-                selected_pet_id = df_display.iloc[selected_idx]['Pet ID']
-                if st.session_state.selected_pet_id != selected_pet_id:
-                    st.session_state.selected_pet_id = selected_pet_id
+                selected_animal_id = df_display.iloc[selected_idx]['Pet ID']
+                if st.session_state.selected_animal_id != selected_animal_id:
+                    st.session_state.selected_animal_id = selected_animal_id
                     st.rerun()
                     
         except Exception as e:
@@ -284,15 +284,15 @@ if df is not None:
                     options=pet_options,
                     index=0
                 )
-                selected_pet_id = int(selected_option.split(" ")[1])
-                if st.session_state.selected_pet_id != selected_pet_id:
-                    st.session_state.selected_pet_id = selected_pet_id
+                selected_animal_id = int(selected_option.split(" ")[1])
+                if st.session_state.selected_animal_id != selected_animal_id:
+                    st.session_state.selected_animal_id = selected_animal_id
                     st.rerun()
 
     with col2:
         st.header("Pet Details")
-        if st.session_state.selected_pet_id:
-            pet_rows = sorted_df[sorted_df['pet_id'] == st.session_state.selected_pet_id]
+        if st.session_state.selected_animal_id:
+            pet_rows = sorted_df[sorted_df['animal_id'] == st.session_state.selected_animal_id]
             if not pet_rows.empty:
                 selected_pet_data = pet_rows.iloc[0]
                 full_detail_html = generate_full_dashboard_html(selected_pet_data)
