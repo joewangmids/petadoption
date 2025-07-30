@@ -38,6 +38,15 @@ st.set_page_config(layout="wide")
 if 'selected_animal_id' not in st.session_state:
     st.session_state.selected_animal_id = None
 
+team_map = {
+    2: "Rescue Coordinator",
+    1: "Community Outreach",
+    0: "Foster Coordinator"
+}
+
+# 2. Create the new 'recommended_team' column by mapping the values
+df['recommended_team'] = df['non_adopted_label'].map(team_map)
+
 df['Positive_Feature_1'] = df['Positive_Feature_1'].str.replace('SHAP-', '')
 df['Positive_Feature_2'] = df['Positive_Feature_2'].str.replace('SHAP-', '')
 df['Positive_Feature_3'] = df['Positive_Feature_3'].str.replace('SHAP-', '')
