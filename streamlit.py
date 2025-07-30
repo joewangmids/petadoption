@@ -37,6 +37,13 @@ st.set_page_config(layout="wide")
 if 'selected_animal_id' not in st.session_state:
     st.session_state.selected_animal_id = None
 
+df['Positive_Feature_1'] = df['Positive_Feature_1'].str.replace('SHAP-', '')
+df['Positive_Feature_2'] = df['Positive_Feature_2'].str.replace('SHAP-', '')
+df['Positive_Feature_3'] = df['Positive_Feature_3'].str.replace('SHAP-', '')
+df['Negative_Feature_1'] = df['Negative_Feature_1'].str.replace('SHAP-', '')
+df['Negative_Feature_2'] = df['Negative_Feature_2'].str.replace('SHAP-', '')
+df['Negative_Feature_3'] = df['Negative_Feature_3'].str.replace('SHAP-', '')
+
 EMOJI_MAP = {
     "Age Months": "🎂",
     "Is Mix": "🧬",
