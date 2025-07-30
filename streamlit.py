@@ -175,8 +175,8 @@ if df is not None:
     
     # 1. Create adoptability category column
     def get_adoptability_category(predicted_proba):
-        if predicted_proba <= 25: return "High Risk"
-        if predicted_proba < 50: return "Medium Risk"
+        if predicted_proba < 0.25: return "High Risk"
+        if predicted_proba < 0.50: return "Medium Risk"
         return "Low Risk"
     filtered_df['adoptability_category'] = filtered_df['predicted_proba'].apply(get_adoptability_category) 
 
