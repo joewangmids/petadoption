@@ -38,8 +38,18 @@ if 'selected_animal_id' not in st.session_state:
     st.session_state.selected_animal_id = None
 
 EMOJI_MAP = {
-    "Breed": "🐕", "Age": "🎂", "Intake Type": "🏷️",
-    "Sex": "🚻", "Has Name": "📛", "Color": "🎨"
+    "Age Months": "🎂",
+    "Is Mix": "🧬",
+    "Intake Type Harmonized": "🏷️",
+    "Num Returned": "↩️",
+    "Primary Color Harmonized": "🎨",
+    "Stay Length Days": "🗓️",
+    "Primary Breed Harmonized": "🐕",
+    "Has Name": "📛",
+    "Animal Type": "🐾",
+    "Max Height": "📏",
+    "Energy Level Value": "⚡",
+    "Demeanor Value": "😊"
 }
 
 def generate_full_dashboard_html(pet_data):
