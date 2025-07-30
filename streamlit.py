@@ -42,12 +42,12 @@ EMOJI_MAP = {
 }
 
 def generate_full_dashboard_html(pet_data):
-    score = pet_data.get('predicted_proba', 0)
+    predicted_proba = pet_data.get('predicted_proba', 0)
     pet_id = pet_data.get('animal_id', 'N/A')
     # raw_predicted_stay = pet_data.get('predicted_stay', 'N/A')
     recommended_team = pet_data.get('recommended_team', 'N/A')
     
-    # if score < 50: predicted_stay = "N/A"
+    # if predicted_proba < 50: predicted_stay = "N/A"
     # else:
     #     try: predicted_stay = f"{int(raw_predicted_stay)}+ Days"
     #     except (ValueError, TypeError): predicted_stay = raw_predicted_stay
@@ -79,8 +79,8 @@ def generate_full_dashboard_html(pet_data):
         </div>
         """
 
-    if score < 25: progress_color, risk_category = "bg-red-500", "High Risk"
-    elif score < 50: progress_color, risk_category = "bg-yellow-500", "Medium Risk"
+    if predicted_proba < 25: progress_color, risk_category = "bg-red-500", "High Risk"
+    elif predicted_proba < 50: progress_color, risk_category = "bg-yellow-500", "Medium Risk"
     else: progress_color, risk_category = "bg-green-500", "Low Risk"
 
     return f"""
@@ -111,14 +111,14 @@ def generate_full_dashboard_html(pet_data):
             </div>
             <div class="flex flex-col gap-4 max-w-3xl mx-auto">
                 <div class="bg-gray-50 rounded-lg p-4 shadow-sm module">
-                    <h2 class="text-lg font-bold text-gray-700 mb-2">Adoption Score</h2>
-                    <h3 class="font-bold text-gray-700">Score: {score}</h3>
-                    <div class="progress-bar mt-1"><div class="progress-fill {progress_color}" style="width:{score}%"></div></div>
+                    <h2 class="text-lg font-bold text-gray-700 mb-2">Adoption predicted_proba</h2>
+                    <h3 class="font-bold text-gray-700">predicted_proba: {predicted_proba}</h3>
+                    <div class="progress-bar mt-1"><div class="progress-fill {progress_color}" style="width:{predicted_proba}%"></div></div>
                     <div class="mt-3"><span class="{progress_color} text-white px-3 py-0.5 rounded-full text-sm font-medium">{risk_category}</span></div>
                 </div>
                 {team_html_module}
                 <div class="bg-gray-50 rounded-lg p-4 shadow-sm module">
-                    <h2 class="text-lg font-bold text-gray-700 mb-2">Top Factors Affecting Score</h2>
+                    <h2 class="text-lg font-bold text-gray-700 mb-2">Top Factors Affecting predicted_proba</h2>
                     <div class="space-y-2">{factors_html}</div>
                 </div>
             </div>
@@ -127,8 +127,8 @@ def generate_full_dashboard_html(pet_data):
     </html>
     """
 
-def color_score(val):
-    """Color scores based on risk level"""
+def color_predicted_proba(val):
+    """Color predicted_probas based on risk level"""
     if val < 25:
         return 'background-color: #FF6B6B; color: white'
     elif val < 50:
@@ -170,11 +170,11 @@ if df is not None:
     # --- DATA PREPARATION FOR SUMMARY DASHBOARD ---
     
     # 1. Create adoptability category column
-    def get_adoptability_category(score):
-        if score <= 33: return "High Risk"
-        if score <= 66: return "Medium Risk"
+    def get_adoptability_category(predicted_proba):
+        if predicted_proba <= 33: return "High Risk"
+        if predicted_proba <= 66: return "Medium Risk"
         return "Low Risk"
-    filtered_df['adoptability_category'] = filtered_df['score'].apply(get_adoptability_category) 
+    filtered_df['adoptability_category'] = filtered_df['predicted_proba'].apply(get_adoptability_category) 
 
     # 2. Create predicted stay bins column
     def get_stay_bin(stay):
@@ -212,15 +212,15 @@ if df is not None:
             ).properties(height=200)
             st.altair_chart(stay_chart, use_container_width=True)
 
-        st.subheader("Distribution of Adoption Scores")
-        score_hist = alt.Chart(filtered_df).mark_bar().encode(
-            alt.X("score:Q", bin=alt.Bin(maxbins=20), title="Adoption Score"),
+        st.subheader("Distribution of Adoption predicted_probas")
+        predicted_proba_hist = alt.Chart(filtered_df).mark_bar().encode(
+            alt.X("predicted_proba:Q", bin=alt.Bin(maxbins=20), title="Adoption predicted_proba"),
             alt.Y('count():Q', title="Number of Pets"),
         ).properties(height=250)
-        st.altair_chart(score_hist, use_container_width=True)
+        st.altair_chart(predicted_proba_hist, use_container_width=True)
 
     # --- TRIAGE BOARD DISPLAY ---
-    sorted_df = filtered_df.sort_values(by="score", ascending=True)
+    sorted_df = filtered_df.sort_values(by="predicted_proba", ascending=True)
     
     col1, col2 = st.columns([1, 1.2])
 
@@ -233,7 +233,7 @@ if df is not None:
                 .legend-item { display: flex; align-items: center; margin-bottom: 5px; }
                 .legend-color { width: 15px; height: 15px; margin-right: 8px; border-radius: 3px; }
             </style>
-            <b>Score Legend:</b>
+            <b>predicted_proba Legend:</b>
             <p style='color: red;'>**Note: 'High Risk' means a pet is at a high risk of NOT being adopted**</p>
             """, unsafe_allow_html=True)
 
@@ -247,15 +247,15 @@ if df is not None:
         
         st.write("Click on a row to view pet details")
         
-        df_display = sorted_df[['pet_id', 'score', 'factor_1_name']].rename(columns={
+        df_display = sorted_df[['pet_id', 'predicted_proba', 'factor_1_name']].rename(columns={
             'pet_id': 'Pet ID', 
-            'score': 'Score', 
+            'predicted_proba': 'predicted_proba', 
             'factor_1_name': 'Primary Concern'
         }).reset_index(drop=True)
         
         try:
             event = st.dataframe(
-                df_display.style.applymap(color_score, subset=['Score']),
+                df_display.style.applymap(color_predicted_proba, subset=['predicted_proba']),
                 use_container_width=True,
                 height=400,
                 hide_index=True,
@@ -272,12 +272,12 @@ if df is not None:
                     
         except Exception as e:
             st.dataframe(
-                df_display.style.applymap(color_score, subset=['Score']),
+                df_display.style.applymap(color_predicted_proba, subset=['predicted_proba']),
                 use_container_width=True,
                 height=300
             )
             if len(df_display) > 0:
-                pet_options = [f"Pet {row['Pet ID']} - Score: {row['Score']} - {row['Primary Concern']}" 
+                pet_options = [f"Pet {row['Pet ID']} - predicted_proba: {row['predicted_proba']} - {row['Primary Concern']}" 
                               for _, row in df_display.iterrows()]
                 selected_option = st.radio(
                     "Select a pet:",
