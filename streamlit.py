@@ -216,7 +216,7 @@ if df is not None:
             ).properties(height=200)
             st.altair_chart(stay_chart, use_container_width=True)
 
-        st.subheader("Distribution of Adoption predicted_probas")
+        st.subheader("Distribution of Adoption Score")
         predicted_proba_hist = alt.Chart(filtered_df).mark_bar().encode(
             alt.X("predicted_proba:Q", bin=alt.Bin(maxbins=20), title="Adoption predicted_proba"),
             alt.Y('count():Q', title="Number of Pets"),
