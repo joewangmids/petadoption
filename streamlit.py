@@ -25,7 +25,7 @@ FILE_KEY = "lz-multiclass/final_pipeline_prediction.csv"
 
 df = load_data_from_s3(S3_BUCKET_NAME, FILE_KEY)
 
-df.head(1)
+st.write(df.head(1))
 
 
 # # --- 1. CONFIGURATION & HELPER FUNCTIONS ---
