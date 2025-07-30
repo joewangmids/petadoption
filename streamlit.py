@@ -111,14 +111,14 @@ def generate_full_dashboard_html(pet_data):
             </div>
             <div class="flex flex-col gap-4 max-w-3xl mx-auto">
                 <div class="bg-gray-50 rounded-lg p-4 shadow-sm module">
-                    <h2 class="text-lg font-bold text-gray-700 mb-2">Adoption predicted_proba</h2>
-                    <h3 class="font-bold text-gray-700">predicted_proba: {predicted_proba}</h3>
+                    <h2 class="text-lg font-bold text-gray-700 mb-2">Adoption Score</h2>
+                    <h3 class="font-bold text-gray-700">Score: {predicted_proba}</h3>
                     <div class="progress-bar mt-1"><div class="progress-fill {progress_color}" style="width:{predicted_proba}%"></div></div>
                     <div class="mt-3"><span class="{progress_color} text-white px-3 py-0.5 rounded-full text-sm font-medium">{risk_category}</span></div>
                 </div>
                 {team_html_module}
                 <div class="bg-gray-50 rounded-lg p-4 shadow-sm module">
-                    <h2 class="text-lg font-bold text-gray-700 mb-2">Top Factors Affecting predicted_proba</h2>
+                    <h2 class="text-lg font-bold text-gray-700 mb-2">Top Factors Affecting Adoption Score</h2>
                     <div class="space-y-2">{factors_html}</div>
                 </div>
             </div>
@@ -244,7 +244,7 @@ if df is not None:
         
         st.write("Click on a row to view pet details")
         
-        df_display = sorted_df[['animal_id', 'predicted_proba', 'Positive_Feature_1']].rename(columns={
+        df_display = sorted_df[['animal_id', 'predicted_proba', 'factor_1_name']].rename(columns={
             'animal_id': 'Pet ID', 
             'predicted_proba': 'predicted_proba', 
             'Positive_Feature_1': 'Primary Concern'
@@ -274,8 +274,7 @@ if df is not None:
                 height=300
             )
             if len(df_display) > 0:
-                pet_options = [f"Pet {row['Pet ID']} - predicted_proba: {row['predicted_proba']} - {row['Primary Concern']}" 
-                              for _, row in df_display.iterrows()]
+                pet_options = [f"Pet {row['Pet ID']} - Probability: {(row['predicted_proba'] * 100):.1f}% - {row['Primary Concern']}" for _, row in df_display.iterrows()]
                 selected_option = st.radio(
                     "Select a pet:",
                     options=pet_options,
