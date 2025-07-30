@@ -48,7 +48,7 @@ def generate_full_dashboard_html(pet_data):
     formatted_proba = f"{(predicted_proba * 100):.2f}%"
 
     # Calculate the width for the progress bar
-    progress_bar_width = raw_proba * 100
+    progress_bar_width = formatted_proba * 100
     
     animal_id = pet_data.get('animal_id', 'N/A')
     # raw_predicted_stay = pet_data.get('predicted_stay', 'N/A')
