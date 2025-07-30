@@ -244,7 +244,7 @@ if df is not None:
         
         st.write("Click on a row to view pet details")
         
-        df_display = sorted_df[['animal_id', 'predicted_proba', 'factor_1_name']].rename(columns={
+        df_display = sorted_df[['animal_id', 'predicted_proba', 'Positive_Feature_1']].rename(columns={
             'animal_id': 'Pet ID', 
             'predicted_proba': 'predicted_proba', 
             'Positive_Feature_1': 'Primary Concern'
