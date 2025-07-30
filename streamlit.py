@@ -27,7 +27,7 @@ df = load_data_from_s3(S3_BUCKET_NAME, FILE_KEY)
 
 st.write(df.columns.T)
 
-st.write(df['Positive_Feature_1'].value_counts)
+st.write(df['Positive_Feature_1'].unique())
 
 # --- 1. CONFIGURATION & HELPER FUNCTIONS ---
 
