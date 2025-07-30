@@ -20,8 +20,8 @@ def load_data_from_s3(bucket, key):
         return None
 
 # --- Configuration ---
-S3_BUCKET_NAME = "vizpickuplocation"
-FILE_KEY = "viz_landing_zone/pets_data.csv"
+S3_BUCKET_NAME = "xgb-los-multi"
+FILE_KEY = "lz-multiclass/final_pipeline_prediction.csv"
 
 # --- 1. CONFIGURATION & HELPER FUNCTIONS ---
 
