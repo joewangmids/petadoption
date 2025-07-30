@@ -259,7 +259,7 @@ if df is not None:
         
         try:
             event = st.dataframe(
-                df_display.style.applymap(color_predicted_proba, subset=['predicted_proba']).format({'predicted_proba': '{:.2%}'}),
+                df_display.style.applymap(color_predicted_proba, subset=['Adoption Score']).format({'Adoption Score': '{:.2%}'}),
                 use_container_width=True,
                 height=400,
                 hide_index=True,
@@ -276,7 +276,7 @@ if df is not None:
                     
         except Exception as e:
             st.dataframe(
-                df_display.style.applymap(color_predicted_proba, subset=['predicted_proba']),
+                df_display.style.applymap(color_predicted_proba, subset=['Adoption Score']),
                 use_container_width=True,
                 height=300
             )
