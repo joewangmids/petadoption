@@ -86,8 +86,8 @@ def generate_full_dashboard_html(pet_data):
         </div>
         """
 
-    if predicted_proba * 100 < 25: progress_color, risk_category = "bg-red-500", "High Risk"
-    elif predicted_proba * 100 < 50: progress_color, risk_category = "bg-yellow-500", "Medium Risk"
+    if predicted_proba < 0.25: progress_color, risk_category = "bg-red-500", "High Risk"
+    elif predicted_proba < 0.5: progress_color, risk_category = "bg-yellow-500", "Medium Risk"
     else: progress_color, risk_category = "bg-green-500", "Low Risk"
 
     return f"""
