@@ -225,6 +225,8 @@ if df is not None:
 
     # --- TRIAGE BOARD DISPLAY ---
     sorted_df = filtered_df.sort_values(by="predicted_proba", ascending=True)
+
+    sorted_df['Positive_Feature_1'] = sorted_df['Positive_Feature_1'].str.replace('SHAP-', '')
     
     col1, col2 = st.columns([1, 1.2])
 
