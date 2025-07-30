@@ -80,7 +80,7 @@ def generate_full_dashboard_html(pet_data):
         formatted_shap = f"{int(abs(raw_shap) * 100)}%"
         unit = " years" if factor_name == "Age" else ""
         statistic_string = f"{factor_value}{unit} are {formatted_shap} {more_or_less} likely to be adopted."
-        emoji = EMOJI_MAP.get(f'Positive_Feature_{i}_Relative_Difff', '❓')
+        emoji = EMOJI_MAP.get(f'Positive_Feature_{i}', '❓')
         factors_html += f"""<div class="flex items-center gap-2"><div class="text-xl text-gray-600">{emoji}</div><div><div class="font-medium text-sm">{factor_name}</div><div class="text-xs text-gray-600">{statistic_string}</div></div></div>"""
 
     team_html_module = "" # Default to an empty string
