@@ -253,7 +253,7 @@ if df is not None:
         
         df_display = sorted_df[['animal_id', 'predicted_proba', 'Positive_Feature_1']].rename(columns={
             'animal_id': 'Pet ID', 
-            'predicted_proba': 'predicted_proba', 
+            'predicted_proba': 'Adoption Score', 
             'Positive_Feature_1': 'Primary Concern'
         }).reset_index(drop=True)
         
