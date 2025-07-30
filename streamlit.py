@@ -19,13 +19,14 @@ def load_data_from_s3(bucket, key):
         st.error(f"Error loading data from S3: {e}")
         return None
 
+# --- Configuration ---
+S3_BUCKET_NAME = "xgb-los-multi"
+FILE_KEY = "lz-multiclass/final_pipeline_prediction.csv"
+
 df = load_data_from_s3(S3_BUCKET_NAME, FILE_KEY)
 
 df.head(1)
 
-# # --- Configuration ---
-# S3_BUCKET_NAME = "xgb-los-multi"
-# FILE_KEY = "lz-multiclass/final_pipeline_prediction.csv"
 
 # # --- 1. CONFIGURATION & HELPER FUNCTIONS ---
 
