@@ -43,6 +43,13 @@ EMOJI_MAP = {
 
 def generate_full_dashboard_html(pet_data):
     predicted_proba = pet_data.get('predicted_proba', 0)
+
+    # Create a formatted string for display
+    formatted_proba = f"{(predicted_proba * 100):.2f}%"
+
+    # Calculate the width for the progress bar
+    progress_bar_width = raw_proba * 100
+    
     animal_id = pet_data.get('animal_id', 'N/A')
     # raw_predicted_stay = pet_data.get('predicted_stay', 'N/A')
     recommended_team = pet_data.get('recommended_team', 'N/A')
@@ -79,8 +86,8 @@ def generate_full_dashboard_html(pet_data):
         </div>
         """
 
-    if predicted_proba < 25: progress_color, risk_category = "bg-red-500", "High Risk"
-    elif predicted_proba < 50: progress_color, risk_category = "bg-yellow-500", "Medium Risk"
+    if predicted_proba * 100 < 25: progress_color, risk_category = "bg-red-500", "High Risk"
+    elif predicted_proba * 100 < 50: progress_color, risk_category = "bg-yellow-500", "Medium Risk"
     else: progress_color, risk_category = "bg-green-500", "Low Risk"
 
     return f"""
@@ -112,8 +119,8 @@ def generate_full_dashboard_html(pet_data):
             <div class="flex flex-col gap-4 max-w-3xl mx-auto">
                 <div class="bg-gray-50 rounded-lg p-4 shadow-sm module">
                     <h2 class="text-lg font-bold text-gray-700 mb-2">Adoption Score</h2>
-                    <h3 class="font-bold text-gray-700">Score: {predicted_proba}</h3>
-                    <div class="progress-bar mt-1"><div class="progress-fill {progress_color}" style="width:{predicted_proba}%"></div></div>
+                    <h3 class="font-bold text-gray-700">Score: {formatted_proba}%</h3>
+                    <div class="progress-bar mt-1"><div class="progress-fill {progress_color}" style="width:{formatted_proba}%"></div></div>
                     <div class="mt-3"><span class="{progress_color} text-white px-3 py-0.5 rounded-full text-sm font-medium">{risk_category}</span></div>
                 </div>
                 {team_html_module}
@@ -230,7 +237,7 @@ if df is not None:
                 .legend-item { display: flex; align-items: center; margin-bottom: 5px; }
                 .legend-color { width: 15px; height: 15px; margin-right: 8px; border-radius: 3px; }
             </style>
-            <b>predicted_proba Legend:</b>
+            <b>Adoption Score Legend:</b>
             <p style='color: red;'>**Note: 'High Risk' means a pet is at a high risk of NOT being adopted**</p>
             """, unsafe_allow_html=True)
 
@@ -252,7 +259,7 @@ if df is not None:
         
         try:
             event = st.dataframe(
-                df_display.style.applymap(color_predicted_proba, subset=['predicted_proba']),
+                df_display.style.applymap(color_predicted_proba, subset=['predicted_proba']).format({'predicted_proba': '{:.2%}'}),
                 use_container_width=True,
                 height=400,
                 hide_index=True,
