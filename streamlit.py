@@ -66,17 +66,11 @@ def generate_full_dashboard_html(pet_data):
     formatted_proba = f"{(predicted_proba * 100):.2f}%"
 
     # Calculate the width for the progress bar
-    progress_bar_width = formatted_proba * 100
+    progress_bar_width = predicted_proba * 100
     
     animal_id = pet_data.get('animal_id', 'N/A')
-    # raw_predicted_stay = pet_data.get('predicted_stay', 'N/A')
     recommended_team = pet_data.get('recommended_team', 'N/A')
     
-    # if predicted_proba < 50: predicted_stay = "N/A"
-    # else:
-    #     try: predicted_stay = f"{int(raw_predicted_stay)}+ Days"
-    #     except (ValueError, TypeError): predicted_stay = raw_predicted_stay
-
     factors_html = ""
     for i in range(1, 4):
         factor_name = pet_data.get(f'Positive_Feature_{i}', '')
@@ -87,7 +81,7 @@ def generate_full_dashboard_html(pet_data):
         formatted_shap = f"{int(abs(raw_shap) * 100)}%"
         unit = " years" if factor_name == "Age" else ""
         statistic_string = f"{factor_value}{unit} are {formatted_shap} {more_or_less} likely to be adopted."
-        emoji = EMOJI_MAP.get(f'Positive_Feature_{i}', '❓')
+        emoji = EMOJI_MAP.get(factor_name, '❓')
         factors_html += f"""<div class="flex items-center gap-2"><div class="text-xl text-gray-600">{emoji}</div><div><div class="font-medium text-sm">{factor_name}</div><div class="text-xs text-gray-600">{statistic_string}</div></div></div>"""
 
     team_html_module = "" # Default to an empty string
@@ -136,14 +130,14 @@ def generate_full_dashboard_html(pet_data):
             </div>
             <div class="flex flex-col gap-4 max-w-3xl mx-auto">
                 <div class="bg-gray-50 rounded-lg p-4 shadow-sm module">
-                    <h2 class="text-lg font-bold text-gray-700 mb-2">Adoption Score</h2>
-                    <h3 class="font-bold text-gray-700">Score: {formatted_proba}</h3>
-                    <div class="progress-bar mt-1"><div class="progress-fill {progress_color}" style="width:{formatted_proba}%"></div></div>
+                    <h2 class="text-lg font-bold text-gray-700 mb-2">Adoption Probability</h2>
+                    <h3 class="font-bold text-gray-700">Probability: {formatted_proba}</h3>
+                    <div class="progress-bar mt-1"><div class="progress-fill {progress_color}" style="width:{progress_bar_width}%"></div></div>
                     <div class="mt-3"><span class="{progress_color} text-white px-3 py-0.5 rounded-full text-sm font-medium">{risk_category}</span></div>
                 </div>
                 {team_html_module}
                 <div class="bg-gray-50 rounded-lg p-4 shadow-sm module">
-                    <h2 class="text-lg font-bold text-gray-700 mb-2">Top Factors Affecting Adoption Score</h2>
+                    <h2 class="text-lg font-bold text-gray-700 mb-2">Top Factors Affecting Adoption Probability</h2>
                     <div class="space-y-2">{factors_html}</div>
                 </div>
             </div>
