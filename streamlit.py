@@ -142,9 +142,6 @@ st.title("🐾 Shelter Pet Priority Board")
 st.write("This board automatically surfaces the pets that need the most attention first.")
 st.markdown("<p style='color: red;'>**Note: 'High Risk' means a pet is at a high risk of NOT being adopted**</p>", unsafe_allow_html=True)
 
-# Load the data
-df = load_data_from_s3(S3_BUCKET_NAME, FILE_KEY)
-
 if df is not None:
     
     st.sidebar.header("Filter Options")
@@ -171,8 +168,8 @@ if df is not None:
     
     # 1. Create adoptability category column
     def get_adoptability_category(predicted_proba):
-        if predicted_proba <= 33: return "High Risk"
-        if predicted_proba <= 66: return "Medium Risk"
+        if predicted_proba <= 25: return "High Risk"
+        if predicted_proba < 50: return "Medium Risk"
         return "Low Risk"
     filtered_df['adoptability_category'] = filtered_df['predicted_proba'].apply(get_adoptability_category) 
 
