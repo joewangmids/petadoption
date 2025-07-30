@@ -208,13 +208,13 @@ if df is not None:
             ).properties(height=200)
             st.altair_chart(category_chart, use_container_width=True)
 
-        with col2:
-            st.subheader("Pets by Predicted Stay")
-            stay_chart = alt.Chart(filtered_df).mark_bar().encode(
-                x=alt.X('count():Q', title="Number of Pets"),
-                y=alt.Y('stay_bin:N', title="Predicted Stay", sort=['0-30 Days', '31-90 Days', '90+ Days', 'N/A'])
-            ).properties(height=200)
-            st.altair_chart(stay_chart, use_container_width=True)
+        # with col2:
+        #     st.subheader("Pets by Predicted Stay")
+        #     stay_chart = alt.Chart(filtered_df).mark_bar().encode(
+        #         x=alt.X('count():Q', title="Number of Pets"),
+        #         y=alt.Y('stay_bin:N', title="Predicted Stay", sort=['0-30 Days', '31-90 Days', '90+ Days', 'N/A'])
+        #     ).properties(height=200)
+        #     st.altair_chart(stay_chart, use_container_width=True)
 
         st.subheader("Distribution of Adoption Score")
         predicted_proba_hist = alt.Chart(filtered_df).mark_bar().encode(
