@@ -281,7 +281,7 @@ if df is not None:
                 height=300
             )
             if len(df_display) > 0:
-                pet_options = [f"Pet {row['Pet ID']} - Probability: {(row['predicted_proba'] * 100):.1f}% - {row['Primary Concern']}" for _, row in df_display.iterrows()]
+                pet_options = [f"Pet {row['Pet ID']} - Probability: {(row['Adoption Score'] * 100):.1f}% - {row['Primary Concern']}" for _, row in df_display.iterrows()]
                 selected_option = st.radio(
                     "Select a pet:",
                     options=pet_options,
