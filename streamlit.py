@@ -71,11 +71,7 @@ EMOJI_MAP = {
 
 def generate_full_dashboard_html(pet_data):
     predicted_proba = pet_data.get('predicted_proba', 0)
-
-    # Create a formatted string for display
     formatted_proba = f"{(predicted_proba * 100):.2f}%"
-
-    # Calculate the width for the progress bar
     progress_bar_width = predicted_proba * 100
     
     animal_id = pet_data.get('animal_id', 'N/A')
@@ -94,8 +90,9 @@ def generate_full_dashboard_html(pet_data):
         emoji = EMOJI_MAP.get(factor_name, '❓')
         factors_html += f"""<div class="flex items-center gap-2"><div class="text-xl text-gray-600">{emoji}</div><div><div class="font-medium text-sm">{factor_name}</div><div class="text-xs text-gray-600">{statistic_string}</div></div></div>"""
 
-    team_html_module = "" # Default to an empty string
-    if pd.notna(recommended_team):
+    team_html_module = ""
+    # --- CHANGE: Added condition to only show team module if probability is less than 0.5 ---
+    if pd.notna(recommended_team) and predicted_proba < 0.5:
         team_html_module = f"""
         <div class="team-section">
             <div class="team-header">
