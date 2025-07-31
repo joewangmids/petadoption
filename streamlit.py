@@ -25,11 +25,6 @@ FILE_KEY = "lz-multiclass/final_pipeline_prediction.csv"
 
 df = load_data_from_s3(S3_BUCKET_NAME, FILE_KEY)
 
-# st.write(df.columns.T)
-
-# st.write(df['Positive_Feature_1'].unique())
-# st.write(df['non_adopted_label'].unique())
-
 # --- 1. CONFIGURATION & HELPER FUNCTIONS ---
 
 st.set_page_config(layout="wide")
@@ -44,7 +39,6 @@ team_map = {
     0: "Foster Coordinator"
 }
 
-# 2. Create the new 'recommended_team' column by mapping the values
 df['recommended_team'] = df['non_adopted_label'].map(team_map)
 
 df['Positive_Feature_1'] = df['Positive_Feature_1'].str.replace('SHAP-', '')
@@ -81,17 +75,20 @@ def generate_full_dashboard_html(pet_data):
     for i in range(1, 4):
         factor_name = pet_data.get(f'Positive_Feature_{i}', '')
         if not factor_name: continue
-        factor_value = pet_data.get(f'Positive_Feature_{i}_Relative_Diff', '')
+
+        # --- CHANGE: Dynamically get the feature's actual value for this pet ---
+        actual_feature_value = pet_data.get(factor_name, '[N/A]')
+
         raw_shap = pet_data.get(f'Positive_Feature_{i}_Relative_Diff', 0)
         more_or_less = "less" if raw_shap < 0 else "more"
         formatted_shap = f"{int(abs(raw_shap) * 100)}%"
-        unit = " years" if factor_name == "Age" else ""
-        statistic_string = f"{factor_value}{unit} are {formatted_shap} {more_or_less} likely to be adopted."
+
+        # --- CHANGE: Updated statistic_string to be more descriptive and use the actual_feature_value ---
+        statistic_string = f"This pet's value is <b>{actual_feature_value}</b>. Pets with this trait are generally {formatted_shap} {more_or_less} likely to be adopted."
+        
         emoji = EMOJI_MAP.get(factor_name, '❓')
         factors_html += f"""<div class="flex items-center gap-2"><div class="text-xl text-gray-600">{emoji}</div><div><div class="font-medium text-sm">{factor_name}</div><div class="text-xs text-gray-600">{statistic_string}</div></div></div>"""
 
-    team_html_module = ""
-    # --- CHANGE: Added condition to only show team module if probability is less than 0.5 ---
     if pd.notna(recommended_team) and predicted_proba < 0.5:
         team_html_module = f"""
         <div class="team-section">
@@ -104,6 +101,9 @@ def generate_full_dashboard_html(pet_data):
             </div>
         </div>
         """
+    else:
+        team_html_module = ""
+
 
     if predicted_proba < 0.25: progress_color, risk_category = "bg-red-500", "High Risk"
     elif predicted_proba < 0.5: progress_color, risk_category = "bg-yellow-500", "Medium Risk"
@@ -154,7 +154,6 @@ def generate_full_dashboard_html(pet_data):
     """
 
 def color_predicted_proba(val):
-    """Color predicted_probas based on risk level"""
     if val < 0.25:
         return 'background-color: #FF6B6B; color: white'
     elif val < 0.50:
@@ -175,43 +174,24 @@ if df is not None:
     if 'intake_date' in df.columns:
         df['intake_date'] = pd.to_datetime(df['intake_date'], errors='coerce')
 
-    # Create a copy of the dataframe to filter
     filtered_df = df.copy()
 
-    # 1. Animal Type Filter
     animal_types = sorted(df['animal_type'].dropna().unique())
     selected_animal_types = st.sidebar.multiselect(
         'Filter by Animal Type:',
         options=animal_types,
-        default=animal_types # Default to all types selected
+        default=animal_types
     )
 
-    # Apply filters sequentially
     if selected_animal_types:
         filtered_df = filtered_df[filtered_df['animal_type'].isin(selected_animal_types)]
     
-    # --- DATA PREPARATION FOR SUMMARY DASHBOARD ---
-    
-    # 1. Create adoptability category column
     def get_adoptability_category(predicted_proba):
         if predicted_proba < 0.25: return "High Risk"
         if predicted_proba < 0.50: return "Medium Risk"
         return "Low Risk"
-    filtered_df['adoptability_category'] = filtered_df['predicted_proba'].apply(get_adoptability_category) 
+    filtered_df['adoptability_category'] = filtered_df['predicted_proba'].apply(get_adoptability_category)
 
-    # 2. Create predicted stay bins column
-    def get_stay_bin(stay):
-        if pd.isna(stay) or str(stay).lower() == 'n/a': return "N/A"
-        try:
-            stay = int(stay)
-            if stay <= 30: return "0-30 Days"
-            if stay <= 90: return "31-90 Days"
-            return "90+ Days"
-        except (ValueError, TypeError):
-            return "N/A"
-    # filtered_df['stay_bin'] = filtered_df['predicted_stay'].apply(get_stay_bin) 
-
-    # --- SUMMARY DASHBOARD ---
     with st.expander("Show Shelter-Wide Summary Dashboard", expanded=True):
         col1, col2 = st.columns([1, 1])
         
@@ -227,14 +207,6 @@ if df is not None:
             ).properties(height=200)
             st.altair_chart(category_chart, use_container_width=True)
 
-        # with col2:
-        #     st.subheader("Pets by Predicted Stay")
-        #     stay_chart = alt.Chart(filtered_df).mark_bar().encode(
-        #         x=alt.X('count():Q', title="Number of Pets"),
-        #         y=alt.Y('stay_bin:N', title="Predicted Stay", sort=['0-30 Days', '31-90 Days', '90+ Days', 'N/A'])
-        #     ).properties(height=200)
-        #     st.altair_chart(stay_chart, use_container_width=True)
-
         st.subheader("Distribution of Adoption Score")
         predicted_proba_hist = alt.Chart(filtered_df).mark_bar().encode(
             alt.X("predicted_proba:Q", bin=alt.Bin(maxbins=20), title="Adoption predicted_proba"),
@@ -242,7 +214,6 @@ if df is not None:
         ).properties(height=250)
         st.altair_chart(predicted_proba_hist, use_container_width=True)
 
-    # --- TRIAGE BOARD DISPLAY ---
     sorted_df = filtered_df.sort_values(by="predicted_proba", ascending=True)
 
     sorted_df['Positive_Feature_1'] = sorted_df['Positive_Feature_1'].str.replace('SHAP-', '')
@@ -252,7 +223,6 @@ if df is not None:
     with col1:
         st.header("Triage List")
 
-        # --- LEGEND ---
         st.markdown("""
             <style>
                 .legend-item { display: flex; align-items: center; margin-bottom: 5px; }
