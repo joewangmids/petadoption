@@ -69,18 +69,36 @@ def generate_full_dashboard_html(pet_data):
         feature_prefix = "Positive_Feature_"
         factors_title = "Top Factors Increasing Adoption Probability"
 
+# Inside the generate_full_dashboard_html function:
+
     for i in range(1, 4):
         factor_name = pet_data.get(f'{feature_prefix}{i}', '')
         if not factor_name or pd.isna(factor_name): continue
+
+        # --- START DEBUG BLOCK ---
+        st.info(f"--- Debugging Loop Iteration {i} ---")
+        st.write(f"1. Feature name being looked up: `'{factor_name}'`")
         
-        actual_feature_value = pet_data.get(factor_name, '[N/A]')
+        # Using .strip() to remove potential leading/trailing whitespace
+        clean_factor_name = factor_name.strip()
+        actual_feature_value = pet_data.get(clean_factor_name, '[N/A]')
+        
+        st.write(f"2. Cleaned feature name: `'{clean_factor_name}'`")
+        st.write(f"3. Retrieved value: `{actual_feature_value}`")
+
+        # To avoid clutter, we only print all available columns on the first loop
+        if i == 1:
+            st.write("4. All available columns in the data for this pet:")
+            st.json(pet_data.keys().tolist())
+        # --- END DEBUG BLOCK ---
+
         raw_shap = pet_data.get(f'{feature_prefix}{i}_Relative_Diff', 0)
         more_or_less = "less" if raw_shap < 0 else "more"
         formatted_shap = f"{int(abs(raw_shap) * 100)}%"
         
         statistic_string = f"This pet's value is <b>{actual_feature_value}</b>. Pets with this trait are generally {formatted_shap} {more_or_less} likely to be adopted."
-        emoji = EMOJI_MAP.get(factor_name.strip(), '❓')
-        factors_html += f"""<div class="flex items-center gap-2"><div class="text-xl text-gray-600">{emoji}</div><div><div class="font-medium text-sm">{factor_name}</div><div class="text-xs text-gray-600">{statistic_string}</div></div></div>"""
+        emoji = EMOJI_MAP.get(clean_factor_name, '❓')
+        factors_html += f"""<div class="flex items-center gap-2"><div class="text-xl text-gray-600">{emoji}</div><div><div class="font-medium text-sm">{clean_factor_name}</div><div class="text-xs text-gray-600">{statistic_string}</div></div></div>"""
 
     if pd.notna(recommended_team) and predicted_proba < 0.5:
         team_html_module = f"""
