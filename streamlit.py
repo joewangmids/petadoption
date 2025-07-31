@@ -26,21 +26,16 @@ FILE_KEY = "lz-multiclass/final_pipeline_prediction.csv"
 
 df = load_data_from_s3(S3_BUCKET_NAME, FILE_KEY)
 
-# --- 1. DATA PREPARATION (Applied globally after loading) ---
+# --- 1. DATA PREPARATION & HELPER FUNCTIONS ---
 if df is not None:
     st.set_page_config(layout="wide")
 
     if 'selected_animal_id' not in st.session_state:
         st.session_state.selected_animal_id = None
 
-    team_map = {
-        2: "Rescue Coordinator",
-        1: "Community Outreach",
-        0: "Foster Coordinator"
-    }
+    team_map = { 2: "Rescue Coordinator", 1: "Community Outreach", 0: "Foster Coordinator" }
     df['recommended_team'] = df['non_adopted_label'].map(team_map)
 
-    # --- CHANGE: Clean all feature name columns at the beginning ---
     for i in range(1, 4):
         df[f'Positive_Feature_{i}'] = df[f'Positive_Feature_{i}'].str.replace('SHAP-', '', regex=False)
         df[f'Negative_Feature_{i}'] = df[f'Negative_Feature_{i}'].str.replace('SHAP-', '', regex=False)
@@ -52,16 +47,31 @@ EMOJI_MAP = {
     "Max Height": "📏", "Energy Level Value": "⚡", "Demeanor Value": "😊"
 }
 
+# --- CHANGE: New helper function for fuzzy matching ---
+def find_closest_column_name(name_to_find, column_list):
+    """Normalizes and finds the best matching column name."""
+    if pd.isna(name_to_find):
+        return None
+        
+    # Normalize the name we're searching for
+    normalized_target = name_to_find.lower().replace(' ', '').replace('_', '')
+    
+    # Normalize each column in the list and check for a match
+    for col in column_list:
+        normalized_col = col.lower().replace(' ', '').replace('_', '')
+        if normalized_target == normalized_col:
+            return col # Return the original, correct column name
+            
+    return name_to_find # Return the original if no match is found
+
 def generate_full_dashboard_html(pet_data):
     predicted_proba = pet_data.get('predicted_proba', 0)
     formatted_proba = f"{(predicted_proba * 100):.2f}%"
     progress_bar_width = predicted_proba * 100
-    
     animal_id = pet_data.get('animal_id', 'N/A')
     recommended_team = pet_data.get('recommended_team', 'N/A')
     
     factors_html = ""
-    # --- CHANGE: Logic to select Negative or Positive features based on probability ---
     if predicted_proba < 0.5:
         feature_prefix = "Negative_Feature_"
         factors_title = "Top Factors Decreasing Adoption Probability"
@@ -69,46 +79,25 @@ def generate_full_dashboard_html(pet_data):
         feature_prefix = "Positive_Feature_"
         factors_title = "Top Factors Increasing Adoption Probability"
 
-# Inside the generate_full_dashboard_html function:
-
     for i in range(1, 4):
         factor_name = pet_data.get(f'{feature_prefix}{i}', '')
         if not factor_name or pd.isna(factor_name): continue
-
-        # --- START DEBUG BLOCK ---
-        st.info(f"--- Debugging Loop Iteration {i} ---")
-        st.write(f"1. Feature name being looked up: `'{factor_name}'`")
         
-        # Using .strip() to remove potential leading/trailing whitespace
-        clean_factor_name = factor_name.strip()
-        actual_feature_value = pet_data.get(clean_factor_name, '[N/A]')
-        
-        st.write(f"2. Cleaned feature name: `'{clean_factor_name}'`")
-        st.write(f"3. Retrieved value: `{actual_feature_value}`")
-
-        # To avoid clutter, we only print all available columns on the first loop
-        if i == 1:
-            st.write("4. All available columns in the data for this pet:")
-            st.json(pet_data.keys().tolist())
-        # --- END DEBUG BLOCK ---
+        # --- CHANGE: Use the fuzzy matching function to get the correct column name ---
+        corrected_column_name = find_closest_column_name(factor_name, pet_data.keys())
+        actual_feature_value = pet_data.get(corrected_column_name, '[N/A]')
 
         raw_shap = pet_data.get(f'{feature_prefix}{i}_Relative_Diff', 0)
         more_or_less = "less" if raw_shap < 0 else "more"
         formatted_shap = f"{int(abs(raw_shap) * 100)}%"
         
         statistic_string = f"This pet's value is <b>{actual_feature_value}</b>. Pets with this trait are generally {formatted_shap} {more_or_less} likely to be adopted."
-        emoji = EMOJI_MAP.get(clean_factor_name, '❓')
-        factors_html += f"""<div class="flex items-center gap-2"><div class="text-xl text-gray-600">{emoji}</div><div><div class="font-medium text-sm">{clean_factor_name}</div><div class="text-xs text-gray-600">{statistic_string}</div></div></div>"""
+        emoji = EMOJI_MAP.get(factor_name.strip(), '❓')
+        factors_html += f"""<div class="flex items-center gap-2"><div class="text-xl text-gray-600">{emoji}</div><div><div class="font-medium text-sm">{factor_name.strip()}</div><div class="text-xs text-gray-600">{statistic_string}</div></div></div>"""
 
     if pd.notna(recommended_team) and predicted_proba < 0.5:
         team_html_module = f"""
-        <div class="team-section">
-            <div class="team-header">
-                <div class="team-avatar"><i class="fas fa-hands-helping"></i></div>
-                <div class="team-info"><h3>{recommended_team}</h3><div class="team-title">Recommended Team</div></div>
-            </div>
-        </div>
-        """
+        <div class="team-section"><div class="team-header"><div class="team-avatar"><i class="fas fa-hands-helping"></i></div><div class="team-info"><h3>{recommended_team}</h3><div class="team-title">Recommended Team</div></div></div></div>"""
     else:
         team_html_module = ""
 
@@ -130,95 +119,59 @@ def color_predicted_proba(val):
     else: return 'background-color: #06D6A0; color: white'
 
 # --- 2. MAIN APP WORKFLOW ---
+# (The rest of the script remains the same)
 st.title("🐾 Shelter Pet Priority Board")
 st.write("This board automatically surfaces the pets that need the most attention first.")
 st.markdown("<p style='color: red;'>**Note: 'High Risk' means a pet is at a high risk of NOT being adopted**</p>", unsafe_allow_html=True)
 
 if df is not None:
     st.sidebar.header("Filter Options")
-
     if 'intake_date' in df.columns:
         df['intake_date'] = pd.to_datetime(df['intake_date'], errors='coerce')
-
     filtered_df = df.copy()
-
     animal_types = sorted(df['animal_type'].dropna().unique())
-    selected_animal_types = st.sidebar.multiselect(
-        'Filter by Animal Type:',
-        options=animal_types,
-        default=animal_types
-    )
-
+    selected_animal_types = st.sidebar.multiselect('Filter by Animal Type:', options=animal_types, default=animal_types)
     if selected_animal_types:
         filtered_df = filtered_df[filtered_df['animal_type'].isin(selected_animal_types)]
-    
     def get_adoptability_category(predicted_proba):
         if predicted_proba < 0.25: return "High Risk"
         if predicted_proba < 0.50: return "Medium Risk"
         return "Low Risk"
     filtered_df['adoptability_category'] = filtered_df['predicted_proba'].apply(get_adoptability_category)
-
     with st.expander("Show Shelter-Wide Summary Dashboard", expanded=True):
         st.subheader("Pets by Adoptability")
         category_chart = alt.Chart(filtered_df).mark_bar().encode(
             x=alt.X('count():Q', title="Number of Pets"),
             y=alt.Y('adoptability_category:N', title="Category", sort=['Low Risk', 'Medium Risk', 'High Risk']),
-            color=alt.Color('adoptability_category:N', 
-                            scale=alt.Scale(domain=['High Risk', 'Medium Risk', 'Low Risk'], 
-                                            range=['#FF6B6B', '#FFD166', '#06D6A0']),
-                            legend=None)
+            color=alt.Color('adoptability_category:N', scale=alt.Scale(domain=['High Risk', 'Medium Risk', 'Low Risk'], range=['#FF6B6B', '#FFD166', '#06D6A0']), legend=None)
         ).properties(height=200)
         st.altair_chart(category_chart, use_container_width=True)
-
         st.subheader("Distribution of Adoption Probability")
         predicted_proba_hist = alt.Chart(filtered_df).mark_bar().encode(
             alt.X("predicted_proba:Q", bin=alt.Bin(maxbins=20), title="Adoption Probability"),
             alt.Y('count():Q', title="Number of Pets"),
         ).properties(height=250)
         st.altair_chart(predicted_proba_hist, use_container_width=True)
-
     sorted_df = filtered_df.sort_values(by="predicted_proba", ascending=True)
-    
     col1, col2 = st.columns([1, 1.2])
-
     with col1:
         st.header("Triage List")
-
         st.markdown("""<style>.legend-item{display:flex;align-items:center;margin-bottom:5px;}.legend-color{width:15px;height:15px;margin-right:8px;border-radius:3px;}</style><b>Adoption Probability Legend:</b>""", unsafe_allow_html=True)
-
         leg1, leg2, leg3 = st.columns(3)
         with leg1: st.markdown("<div class='legend-item'><div class='legend-color' style='background-color:#FF6B6B;'></div> High Risk (< 25%)</div>", unsafe_allow_html=True)
         with leg2: st.markdown("<div class='legend-item'><div class='legend-color' style='background-color:#FFD166;'></div> Medium Risk (25-50%)</div>", unsafe_allow_html=True)
         with leg3: st.markdown("<div class='legend-item'><div class='legend-color' style='background-color:#06D6A0;'></div> Low Risk (≥ 50%)</div>", unsafe_allow_html=True)
-        
         st.write("Click on a row to view pet details")
-        
-        # --- CHANGE: Logic to show correct Primary Concern (Positive vs Negative) ---
-        sorted_df['Primary Concern'] = np.where(
-            sorted_df['predicted_proba'] < 0.5,
-            sorted_df['Negative_Feature_1'],
-            sorted_df['Positive_Feature_1']
-        )
-        
-        df_display = sorted_df[['animal_id', 'predicted_proba', 'Primary Concern']].rename(columns={
-            'animal_id': 'Pet ID', 
-            'predicted_proba': 'Adoption Probability', 
-        }).reset_index(drop=True)
-        
+        sorted_df['Primary Concern'] = np.where(sorted_df['predicted_proba'] < 0.5, sorted_df['Negative_Feature_1'], sorted_df['Positive_Feature_1'])
+        df_display = sorted_df[['animal_id', 'predicted_proba', 'Primary Concern']].rename(columns={'animal_id': 'Pet ID', 'predicted_proba': 'Adoption Probability'}).reset_index(drop=True)
         try:
-            event = st.dataframe(
-                df_display.style.applymap(color_predicted_proba, subset=['Adoption Probability']).format({'Adoption Probability': '{:.2%}'}),
-                use_container_width=True, height=400, hide_index=True,
-                on_select="rerun", selection_mode="single-row"
-            )
-            
+            event = st.dataframe(df_display.style.applymap(color_predicted_proba, subset=['Adoption Probability']).format({'Adoption Probability': '{:.2%}'}), use_container_width=True, height=400, hide_index=True, on_select="rerun", selection_mode="single-row")
             if event.selection and len(event.selection.rows) > 0:
                 selected_idx = event.selection.rows[0]
                 selected_animal_id = df_display.iloc[selected_idx]['Pet ID']
                 if st.session_state.selected_animal_id != selected_animal_id:
                     st.session_state.selected_animal_id = selected_animal_id
                     st.rerun()
-                    
         except Exception as e:
             st.dataframe(df_display.style.applymap(color_predicted_proba, subset=['Adoption Probability']), use_container_width=True, height=300)
             if len(df_display) > 0:
@@ -228,7 +181,6 @@ if df is not None:
                 if st.session_state.selected_animal_id != selected_animal_id:
                     st.session_state.selected_animal_id = selected_animal_id
                     st.rerun()
-
     with col2:
         st.header("Pet Details")
         if st.session_state.selected_animal_id:
