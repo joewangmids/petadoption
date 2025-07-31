@@ -69,8 +69,8 @@ def generate_full_dashboard_html(pet_data):
     animal_id = pet_data.get('animal_id', 'N/A')
     recommended_team = pet_data.get('recommended_team', 'N/A')
     
-    # --- CHANGE: Revert to building a multi-line HTML string ---
-    factors_html = ""
+    # --- CHANGE: New logic to build a list of phrases ---
+    factor_phrases = []
     if predicted_proba < 0.5:
         feature_prefix = "Negative_Feature_"
         factors_title = "Top Factors Decreasing Adoption Probability"
@@ -85,39 +85,35 @@ def generate_full_dashboard_html(pet_data):
         factor_name = factor_name.strip()
         corrected_column_name = find_closest_column_name(factor_name, pet_data.keys())
         actual_feature_value = pet_data.get(corrected_column_name, '[N/A]')
-
-        raw_shap = pet_data.get(f'{feature_prefix}{i}_Relative_Diff', 0)
-        more_or_less = "less" if raw_shap < 0 else "more"
-        formatted_shap = f"{int(abs(raw_shap) * 100)}%"
         
-        # This conditional logic block for the descriptive text remains the same
+        phrase = ""
         if factor_name == "Has Name":
-            description = "have a name" if actual_feature_value == 1 else "don't have a name"
-            statistic_string = f"Pets that {description} are generally {formatted_shap} {more_or_less} likely to be adopted."
+            phrase = "having a name" if actual_feature_value == 1 else "not having a name"
         elif factor_name == "Age Months":
-            statistic_string = f"Pets that are <b>{actual_feature_value} months old</b> are generally {formatted_shap} {more_or_less} likely to be adopted."
+            phrase = f"being {actual_feature_value} months old"
         elif factor_name == "Stay Length Days":
-            statistic_string = f"Pets with <b>{int(actual_feature_value)} days in the shelter</b> are generally {formatted_shap} {more_or_less} likely to be adopted."
+            phrase = f"a stay of {int(actual_feature_value)} days" if actual_feature_value > 0 else "no prior stay length"
         elif factor_name == "Sex":
-            statistic_string = f"Pets that are <b>{str(actual_feature_value).lower()}</b> are generally {formatted_shap} {more_or_less} likely to be adopted."
+            phrase = f"being {str(actual_feature_value).lower()}"
         elif factor_name == "Intake Type Harmonized":
             intake_desc = INTAKE_TYPE_MAP.get(actual_feature_value, str(actual_feature_value).lower())
-            statistic_string = f"Pets that are from a <b>{intake_desc}</b> intake are generally {formatted_shap} {more_or_less} likely to be adopted."
+            phrase = f"an intake type of '{intake_desc}'"
         else:
-            statistic_string = f"Pets with a {factor_name} of <b>{actual_feature_value}</b> are generally {formatted_shap} {more_or_less} likely to be adopted."
-
-        emoji = EMOJI_MAP.get(factor_name, '❓')
+            phrase = f"a {factor_name} of '{actual_feature_value}'"
         
-        # --- CHANGE: Re-create the itemized HTML block for each factor ---
-        factors_html += f"""
-        <div class="flex items-center gap-2">
-            <div class="text-xl text-gray-600">{emoji}</div>
-            <div>
-                <div class="font-medium text-sm">{factor_name}</div>
-                <div class="text-xs text-gray-600">{statistic_string}</div>
-            </div>
-        </div>
-        """
+        if phrase:
+            factor_phrases.append(phrase)
+
+    # --- CHANGE: Join the phrases into a single summary sentence ---
+    summary_sentence = ""
+    if len(factor_phrases) == 1:
+        summary_sentence = f"The primary factor is <b>{factor_phrases[0]}</b>."
+    elif len(factor_phrases) == 2:
+        summary_sentence = f"The primary factors are <b>{factor_phrases[0]}</b> and <b>{factor_phrases[1]}</b>."
+    elif len(factor_phrases) == 3:
+        summary_sentence = f"The primary factors are <b>{factor_phrases[0]}</b>, <b>{factor_phrases[1]}</b>, and <b>{factor_phrases[2]}</b>."
+    
+    factors_html = f'<div class="text-sm text-gray-800">{summary_sentence}</div>'
 
     if pd.notna(recommended_team) and predicted_proba < 0.5:
         team_html_module = f"""
@@ -219,3 +215,7 @@ if df is not None:
             st.info("Click on a row to view pet details.")
 else:
     st.warning("Data could not be loaded. Please check S3 configuration and credentials.")
+
+
+
+
