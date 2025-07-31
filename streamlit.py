@@ -44,25 +44,25 @@ EMOJI_MAP = {
     "Age Months": "🎂", "Is Mix": "🧬", "Intake Type Harmonized": "🏷️",
     "Num Returned": "↩️", "Primary Color Harmonized": "🎨", "Stay Length Days": "🗓️",
     "Primary Breed Harmonized": "🐕", "Has Name": "📛", "Animal Type": "🐾",
-    "Max Height": "📏", "Energy Level Value": "⚡", "Demeanor Value": "😊"
+    "Max Height": "📏", "Energy Level Value": "⚡", "Demeanor Value": "😊", "Sex": "🚻"
 }
 
-# --- CHANGE: New helper function for fuzzy matching ---
+# --- CHANGE: Dictionary to expand intake type abbreviations ---
+INTAKE_TYPE_MAP = {
+    "DISPO REQ": "disposition required",
+    "STRAY": "a stray",
+    "OWNER SUR": "an owner surrender"
+}
+
+
 def find_closest_column_name(name_to_find, column_list):
-    """Normalizes and finds the best matching column name."""
-    if pd.isna(name_to_find):
-        return None
-        
-    # Normalize the name we're searching for
+    if pd.isna(name_to_find): return None
     normalized_target = name_to_find.lower().replace(' ', '').replace('_', '')
-    
-    # Normalize each column in the list and check for a match
     for col in column_list:
         normalized_col = col.lower().replace(' ', '').replace('_', '')
         if normalized_target == normalized_col:
-            return col # Return the original, correct column name
-            
-    return name_to_find # Return the original if no match is found
+            return col
+    return name_to_find
 
 def generate_full_dashboard_html(pet_data):
     predicted_proba = pet_data.get('predicted_proba', 0)
@@ -83,7 +83,7 @@ def generate_full_dashboard_html(pet_data):
         factor_name = pet_data.get(f'{feature_prefix}{i}', '')
         if not factor_name or pd.isna(factor_name): continue
         
-        # --- CHANGE: Use the fuzzy matching function to get the correct column name ---
+        factor_name = factor_name.strip()
         corrected_column_name = find_closest_column_name(factor_name, pet_data.keys())
         actual_feature_value = pet_data.get(corrected_column_name, '[N/A]')
 
@@ -91,9 +91,25 @@ def generate_full_dashboard_html(pet_data):
         more_or_less = "less" if raw_shap < 0 else "more"
         formatted_shap = f"{int(abs(raw_shap) * 100)}%"
         
-        statistic_string = f"This pet's value is <b>{actual_feature_value}</b>. Pets with this trait are generally {formatted_shap} {more_or_less} likely to be adopted."
-        emoji = EMOJI_MAP.get(factor_name.strip(), '❓')
-        factors_html += f"""<div class="flex items-center gap-2"><div class="text-xl text-gray-600">{emoji}</div><div><div class="font-medium text-sm">{factor_name.strip()}</div><div class="text-xs text-gray-600">{statistic_string}</div></div></div>"""
+        # --- CHANGE: New conditional logic for creating the description string ---
+        if factor_name == "Has Name":
+            description = "have a name" if actual_feature_value == 1 else "don't have a name"
+            statistic_string = f"Pets that {description} are generally {formatted_shap} {more_or_less} likely to be adopted."
+        elif factor_name == "Age Months":
+            statistic_string = f"Pets that are <b>{actual_feature_value} months old</b> are generally {formatted_shap} {more_or_less} likely to be adopted."
+        elif factor_name == "Stay Length Days":
+            statistic_string = f"Pets with <b>{int(actual_feature_value)} days in the shelter</b> are generally {formatted_shap} {more_or_less} likely to be adopted."
+        elif factor_name == "Sex":
+            statistic_string = f"Pets that are <b>{str(actual_feature_value).lower()}</b> are generally {formatted_shap} {more_or_less} likely to be adopted."
+        elif factor_name == "Intake Type Harmonized":
+            intake_desc = INTAKE_TYPE_MAP.get(actual_feature_value, str(actual_feature_value).lower())
+            statistic_string = f"Pets that are from a <b>{intake_desc}</b> intake are generally {formatted_shap} {more_or_less} likely to be adopted."
+        else:
+            # A sensible default for any other features
+            statistic_string = f"Pets with a {factor_name} of <b>{actual_feature_value}</b> are generally {formatted_shap} {more_or_less} likely to be adopted."
+
+        emoji = EMOJI_MAP.get(factor_name, '❓')
+        factors_html += f"""<div class="flex items-center gap-2"><div class="text-xl text-gray-600">{emoji}</div><div><div class="font-medium text-sm">{factor_name}</div><div class="text-xs text-gray-600">{statistic_string}</div></div></div>"""
 
     if pd.notna(recommended_team) and predicted_proba < 0.5:
         team_html_module = f"""
@@ -119,7 +135,7 @@ def color_predicted_proba(val):
     else: return 'background-color: #06D6A0; color: white'
 
 # --- 2. MAIN APP WORKFLOW ---
-# (The rest of the script remains the same)
+# The rest of the script remains the same
 st.title("🐾 Shelter Pet Priority Board")
 st.write("This board automatically surfaces the pets that need the most attention first.")
 st.markdown("<p style='color: red;'>**Note: 'High Risk' means a pet is at a high risk of NOT being adopted**</p>", unsafe_allow_html=True)
