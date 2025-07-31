@@ -47,13 +47,11 @@ EMOJI_MAP = {
     "Max Height": "📏", "Energy Level Value": "⚡", "Demeanor Value": "😊", "Sex": "🚻"
 }
 
-# --- CHANGE: Dictionary to expand intake type abbreviations ---
 INTAKE_TYPE_MAP = {
     "DISPO REQ": "disposition required",
     "STRAY": "a stray",
     "OWNER SUR": "an owner surrender"
 }
-
 
 def find_closest_column_name(name_to_find, column_list):
     if pd.isna(name_to_find): return None
@@ -71,7 +69,8 @@ def generate_full_dashboard_html(pet_data):
     animal_id = pet_data.get('animal_id', 'N/A')
     recommended_team = pet_data.get('recommended_team', 'N/A')
     
-    factors_html = ""
+    # --- CHANGE: New logic to build a list of phrases ---
+    factor_phrases = []
     if predicted_proba < 0.5:
         feature_prefix = "Negative_Feature_"
         factors_title = "Top Factors Decreasing Adoption Probability"
@@ -86,30 +85,35 @@ def generate_full_dashboard_html(pet_data):
         factor_name = factor_name.strip()
         corrected_column_name = find_closest_column_name(factor_name, pet_data.keys())
         actual_feature_value = pet_data.get(corrected_column_name, '[N/A]')
-
-        raw_shap = pet_data.get(f'{feature_prefix}{i}_Relative_Diff', 0)
-        more_or_less = "less" if raw_shap < 0 else "more"
-        formatted_shap = f"{int(abs(raw_shap) * 100)}%"
         
-        # --- CHANGE: New conditional logic for creating the description string ---
+        phrase = ""
         if factor_name == "Has Name":
-            description = "have a name" if actual_feature_value == 1 else "don't have a name"
-            statistic_string = f"Pets that {description} are generally {formatted_shap} {more_or_less} likely to be adopted."
+            phrase = "having a name" if actual_feature_value == 1 else "not having a name"
         elif factor_name == "Age Months":
-            statistic_string = f"Pets that are <b>{actual_feature_value} months old</b> are generally {formatted_shap} {more_or_less} likely to be adopted."
+            phrase = f"being {actual_feature_value} months old"
         elif factor_name == "Stay Length Days":
-            statistic_string = f"Pets with <b>{int(actual_feature_value)} days in the shelter</b> are generally {formatted_shap} {more_or_less} likely to be adopted."
+            phrase = f"a stay of {int(actual_feature_value)} days" if actual_feature_value > 0 else "no prior stay length"
         elif factor_name == "Sex":
-            statistic_string = f"Pets that are <b>{str(actual_feature_value).lower()}</b> are generally {formatted_shap} {more_or_less} likely to be adopted."
+            phrase = f"being {str(actual_feature_value).lower()}"
         elif factor_name == "Intake Type Harmonized":
             intake_desc = INTAKE_TYPE_MAP.get(actual_feature_value, str(actual_feature_value).lower())
-            statistic_string = f"Pets that are from a <b>{intake_desc}</b> intake are generally {formatted_shap} {more_or_less} likely to be adopted."
+            phrase = f"an intake type of '{intake_desc}'"
         else:
-            # A sensible default for any other features
-            statistic_string = f"Pets with a {factor_name} of <b>{actual_feature_value}</b> are generally {formatted_shap} {more_or_less} likely to be adopted."
+            phrase = f"a {factor_name} of '{actual_feature_value}'"
+        
+        if phrase:
+            factor_phrases.append(phrase)
 
-        emoji = EMOJI_MAP.get(factor_name, '❓')
-        factors_html += f"""<div class="flex items-center gap-2"><div class="text-xl text-gray-600">{emoji}</div><div><div class="font-medium text-sm">{factor_name}</div><div class="text-xs text-gray-600">{statistic_string}</div></div></div>"""
+    # --- CHANGE: Join the phrases into a single summary sentence ---
+    summary_sentence = ""
+    if len(factor_phrases) == 1:
+        summary_sentence = f"The primary factor is <b>{factor_phrases[0]}</b>."
+    elif len(factor_phrases) == 2:
+        summary_sentence = f"The primary factors are <b>{factor_phrases[0]}</b> and <b>{factor_phrases[1]}</b>."
+    elif len(factor_phrases) == 3:
+        summary_sentence = f"The primary factors are <b>{factor_phrases[0]}</b>, <b>{factor_phrases[1]}</b>, and <b>{factor_phrases[2]}</b>."
+    
+    factors_html = f'<div class="text-sm text-gray-800">{summary_sentence}</div>'
 
     if pd.notna(recommended_team) and predicted_proba < 0.5:
         team_html_module = f"""
