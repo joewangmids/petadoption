@@ -1,18 +1,3 @@
-Yes, you can change the axis labels to percentages by adding a formatting expression to your Altair chart definition.
-
------
-
-### The Logic
-
-You'll need to modify the `alt.X` encoding for your "Distribution of Adoption Probability" chart. By adding an `axis` parameter (`alt.Axis`) with a `labelExpr`, you can provide a formatting rule. The expression `format(datum.label, '.0%')` tells the chart to take the label value (which is a decimal) and format it as a percentage.
-
------
-
-### Corrected Code
-
-Here is the full script with the updated chart definition. I've highlighted the specific line that was changed.
-
-```python
 import streamlit as st
 import pandas as pd
 import numpy as np
