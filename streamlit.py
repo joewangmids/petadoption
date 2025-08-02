@@ -143,7 +143,6 @@ st.write("This board automatically surfaces the pets that need the most attentio
 st.markdown("<p style='color: red;'>**Note: 'High Risk' means a pet is at a high risk of NOT being adopted**</p>", unsafe_allow_html=True)
 
 if df is not None:
-    # --- CHANGE: Create the adoptability_category column earlier ---
     def get_adoptability_category(predicted_proba):
         if predicted_proba < 0.25: return "High Risk"
         if predicted_proba < 0.50: return "Medium Risk"
@@ -156,11 +155,9 @@ if df is not None:
     
     filtered_df = df.copy()
 
-    # Animal Type Filter
     animal_types = sorted(df['animal_type'].dropna().unique())
     selected_animal_types = st.sidebar.multiselect('Filter by Animal Type:', options=animal_types, default=animal_types)
 
-    # Stay Length Days Filter
     min_stay = int(df['stay_length_days'].min())
     max_stay = int(df['stay_length_days'].max())
     stay_range = st.sidebar.slider(
@@ -170,16 +167,13 @@ if df is not None:
         value=(min_stay, max_stay)
     )
     
-    # --- CHANGE: Add a new multiselect widget for Risk Category ---
     risk_categories = ["High Risk", "Medium Risk", "Low Risk"]
     selected_risk_categories = st.sidebar.multiselect(
         'Filter by Risk Category:',
         options=risk_categories,
         default=risk_categories
     )
-    # -----------------------------------------------------------
 
-    # Apply filters sequentially
     if selected_animal_types:
         filtered_df = filtered_df[filtered_df['animal_type'].isin(selected_animal_types)]
     
@@ -189,10 +183,8 @@ if df is not None:
         (filtered_df['stay_length_days'] <= max_selected_stay)
     ]
     
-    # --- CHANGE: Apply the new risk category filter ---
     if selected_risk_categories:
         filtered_df = filtered_df[filtered_df['adoptability_category'].isin(selected_risk_categories)]
-    # ------------------------------------------------
 
     with st.expander("Show Shelter-Wide Summary Dashboard", expanded=True):
         st.subheader("Pets by Adoptability")
@@ -202,10 +194,13 @@ if df is not None:
             color=alt.Color('adoptability_category:N', scale=alt.Scale(domain=['High Risk', 'Medium Risk', 'Low Risk'], range=['#FF6B6B', '#FFD166', '#06D6A0']), legend=None)
         ).properties(height=200)
         st.altair_chart(category_chart, use_container_width=True)
-
         st.subheader("Distribution of Adoption Probability")
         predicted_proba_hist = alt.Chart(filtered_df).mark_bar().encode(
-            alt.X("predicted_proba:Q", bin=alt.Bin(maxbins=20), title="Adoption Probability"),
+            # --- CHANGE: Added axis formatting to show percentages ---
+            alt.X("predicted_proba:Q", 
+                  bin=alt.Bin(maxbins=20), 
+                  title="Adoption Probability",
+                  axis=alt.Axis(format='%')),
             alt.Y('count():Q', title="Number of Pets"),
         ).properties(height=250)
         st.altair_chart(predicted_proba_hist, use_container_width=True)
@@ -253,6 +248,3 @@ if df is not None:
             st.info("Click on a row to view pet details.")
 else:
     st.warning("Data could not be loaded. Please check S3 configuration and credentials.")
-
-
-
