@@ -33,7 +33,8 @@ if df is not None:
     if 'selected_animal_id' not in st.session_state:
         st.session_state.selected_animal_id = None
 
-    team_map = { 2: "Rescue Coordinator", 1: "Community Outreach", 0: "Foster Coordinator" }
+    team_map = { 2: "Community Outreach", 1: "Rescue Coordinator", 0: "Foster Coordinator" }
+    
     df['recommended_team'] = df['non_adopted_label'].map(team_map)
 
     for i in range(1, 4):
@@ -69,7 +70,6 @@ def generate_full_dashboard_html(pet_data):
     animal_id = pet_data.get('animal_id', 'N/A')
     recommended_team = pet_data.get('recommended_team', 'N/A')
     
-    # --- CHANGE: New logic to build a list of phrases ---
     factor_phrases = []
     if predicted_proba < 0.5:
         feature_prefix = "Negative_Feature_"
@@ -104,7 +104,6 @@ def generate_full_dashboard_html(pet_data):
         if phrase:
             factor_phrases.append(phrase)
 
-    # --- CHANGE: Join the phrases into a single summary sentence ---
     summary_sentence = ""
     if len(factor_phrases) == 1:
         summary_sentence = f"The primary factor is <b>{factor_phrases[0]}</b>."
@@ -139,7 +138,6 @@ def color_predicted_proba(val):
     else: return 'background-color: #06D6A0; color: white'
 
 # --- 2. MAIN APP WORKFLOW ---
-# The rest of the script remains the same
 st.title("🐾 Shelter Pet Priority Board")
 st.write("This board automatically surfaces the pets that need the most attention first.")
 st.markdown("<p style='color: red;'>**Note: 'High Risk' means a pet is at a high risk of NOT being adopted**</p>", unsafe_allow_html=True)
@@ -148,16 +146,43 @@ if df is not None:
     st.sidebar.header("Filter Options")
     if 'intake_date' in df.columns:
         df['intake_date'] = pd.to_datetime(df['intake_date'], errors='coerce')
+    
     filtered_df = df.copy()
+
+    # Animal Type Filter
     animal_types = sorted(df['animal_type'].dropna().unique())
     selected_animal_types = st.sidebar.multiselect('Filter by Animal Type:', options=animal_types, default=animal_types)
+
+    # --- CHANGE: Add slider for Stay Length Days ---
+    min_stay = int(df['stay_length_days'].min())
+    max_stay = int(df['stay_length_days'].max())
+    
+    stay_range = st.sidebar.slider(
+        'Filter by Days in Shelter:',
+        min_value=min_stay,
+        max_value=max_stay,
+        value=(min_stay, max_stay) # Default to the full range
+    )
+    # ---------------------------------------------
+
+    # Apply filters sequentially
     if selected_animal_types:
         filtered_df = filtered_df[filtered_df['animal_type'].isin(selected_animal_types)]
+    
+    # --- CHANGE: Apply the stay length filter ---
+    min_selected_stay, max_selected_stay = stay_range
+    filtered_df = filtered_df[
+        (filtered_df['stay_length_days'] >= min_selected_stay) &
+        (filtered_df['stay_length_days'] <= max_selected_stay)
+    ]
+    # ------------------------------------------
+
     def get_adoptability_category(predicted_proba):
         if predicted_proba < 0.25: return "High Risk"
         if predicted_proba < 0.50: return "Medium Risk"
         return "Low Risk"
     filtered_df['adoptability_category'] = filtered_df['predicted_proba'].apply(get_adoptability_category)
+
     with st.expander("Show Shelter-Wide Summary Dashboard", expanded=True):
         st.subheader("Pets by Adoptability")
         category_chart = alt.Chart(filtered_df).mark_bar().encode(
@@ -172,6 +197,7 @@ if df is not None:
             alt.Y('count():Q', title="Number of Pets"),
         ).properties(height=250)
         st.altair_chart(predicted_proba_hist, use_container_width=True)
+
     sorted_df = filtered_df.sort_values(by="predicted_proba", ascending=True)
     col1, col2 = st.columns([1, 1.2])
     with col1:
@@ -215,7 +241,3 @@ if df is not None:
             st.info("Click on a row to view pet details.")
 else:
     st.warning("Data could not be loaded. Please check S3 configuration and credentials.")
-
-
-
-
