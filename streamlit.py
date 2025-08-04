@@ -37,11 +37,11 @@ if df is not None:
     if 'selected_animal_id' not in st.session_state:
         st.session_state.selected_animal_id = None
 
-    df.columns = [col.replace(' Harmonized', '').replace('_harmonized', '') for col in df.columns]
+    df.columns = [col.replace(' Harmonized', ' (cleaned)').replace('_harmonized', ' (cleaned)') for col in df.columns]
 
     for i in range(1, 4):
-        df[f'Positive_Feature_{i}'] = df[f'Positive_Feature_{i}'].str.replace(' Harmonized', '', regex=False)
-        df[f'Negative_Feature_{i}'] = df[f'Negative_Feature_{i}'].str.replace(' Harmonized', '', regex=False)
+        df[f'Positive_Feature_{i}'] = df[f'Positive_Feature_{i}'].str.replace(' Harmonized', ' (cleaned)', regex=False)
+        df[f'Negative_Feature_{i}'] = df[f'Negative_Feature_{i}'].str.replace(' Harmonized', ' (cleaned)', regex=False)
 
     team_map = { 2: "Community Outreach", 1: "Rescue Coordinator", 0: "Foster Coordinator" }
     
