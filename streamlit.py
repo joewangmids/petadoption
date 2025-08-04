@@ -119,7 +119,7 @@ def generate_full_dashboard_html(pet_data):
                  # Fallback for non-numeric values
                  phrase = f"a Num Returned value of '{actual_feature_value}'"
         else:
-            phrase = f"a {factor_name} of '{actual_feature_value}'"
+            phrase = f"a {lower(factor_name)} of '{actual_feature_value}'"
         
         if phrase:
             factor_phrases.append(phrase)
