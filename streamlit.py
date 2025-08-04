@@ -41,28 +41,32 @@ if df is not None:
         df[f'Positive_Feature_{i}'] = df[f'Positive_Feature_{i}'].str.replace('SHAP-', '', regex=False)
         df[f'Negative_Feature_{i}'] = df[f'Negative_Feature_{i}'].str.replace('SHAP-', '', regex=False)
 
-EMOJI_MAP = {
-    "Age Months": "🎂", "Is Mix": "🧬", "Intake Type Harmonized": "🏷️",
-    "Num Returned": "↩️", "Primary Color Harmonized": "🎨", "Stay Length Days": "🗓️",
-    "Primary Breed Harmonized": "🐕", "Has Name": "📛", "Animal Type": "🐾",
-    "Max Height": "📏", "Energy Level Value": "⚡", "Demeanor Value": "😊", "Sex": "🚻"
-}
+    EMOJI_MAP = {
+        "Age Months": "🎂", "Is Mix": "🧬", "Intake Type Harmonized": "🏷️",
+        "Num Returned": "↩️", "Primary Color Harmonized": "🎨", "Stay Length Days": "🗓️",
+        "Primary Breed Harmonized": "🐕", "Has Name": "📛", "Animal Type": "🐾",
+        "Max Height": "📏", "Energy Level Value": "⚡", "Demeanor Value": "😊", "Sex": "🚻"
+    }
 
-INTAKE_TYPE_MAP = {
-    "DISPO REQ": "disposition required",
-    "STRAY": "a stray",
-    "OWNER SUR": "an owner surrender"
-}
+    INTAKE_TYPE_MAP = {
+        "DISPO REQ": "disposition required",
+        "STRAY": "a stray",
+        "OWNER SUR": "an owner surrender"
+    }
 
-def find_closest_column_name(name_to_find, column_list):
-    if pd.isna(name_to_find): return None
-    normalized_target = name_to_find.lower().replace(' ', '').replace('_', '')
-    for col in column_list:
-        normalized_col = col.lower().replace(' ', '').replace('_', '')
-        if normalized_target == normalized_col:
-            return col
-    return name_to_find
+    def find_closest_column_name(name_to_find, column_list):
+        if pd.isna(name_to_find): return None
+        normalized_target = name_to_find.lower().replace(' ', '').replace('_', '')
+        for col in column_list:
+            normalized_col = col.lower().replace(' ', '').replace('_', '')
+            if normalized_target == normalized_col:
+                return col
+        return name_to_find
 
+    # --- START OF TROUBLESHOOTING BLOCK ---
+    # This block will find a specific pet and print its key data to the sidebar.
+    # You can change the pet_id_to_debug to inspect any pet.
+    
     pet_id_to_debug = 'A1369699'
     pet_data_row = df[df['animal_id'] == pet_id_to_debug]
 
@@ -91,92 +95,87 @@ def find_closest_column_name(name_to_find, column_list):
         st.sidebar.markdown("---") # Add a separator
     else:
         st.sidebar.warning(f"Pet ID {pet_id_to_debug} not found.")
+    # --- END OF TROUBLESHOOTING BLOCK ---
 
-def generate_full_dashboard_html(pet_data):
-    predicted_proba = pet_data.get('predicted_proba', 0)
-    formatted_proba = f"{(predicted_proba * 100):.2f}%"
-    progress_bar_width = predicted_proba * 100
-    animal_id = pet_data.get('animal_id', 'N/A')
-    recommended_team = pet_data.get('recommended_team', 'N/A')
-    
-    factor_phrases = []
-    if predicted_proba < 0.5:
-        feature_prefix = "Negative_Feature_"
-        factors_title = "Top Factors Decreasing Adoption Probability"
-    else:
-        feature_prefix = "Positive_Feature_"
-        factors_title = "Top Factors Increasing Adoption Probability"
 
-    for i in range(1, 4):
-        factor_name = pet_data.get(f'{feature_prefix}{i}', '')
-        if not factor_name or pd.isna(factor_name): continue
+    def generate_full_dashboard_html(pet_data):
+        predicted_proba = pet_data.get('predicted_proba', 0)
+        formatted_proba = f"{(predicted_proba * 100):.2f}%"
+        progress_bar_width = predicted_proba * 100
+        animal_id = pet_data.get('animal_id', 'N/A')
+        recommended_team = pet_data.get('recommended_team', 'N/A')
         
-        factor_name = factor_name.strip()
-        corrected_column_name = find_closest_column_name(factor_name, pet_data.keys())
-        actual_feature_value = pet_data.get(corrected_column_name, '[N/A]')
-        
-        phrase = ""
-        if factor_name == "Has Name":
-            phrase = "having a name" if actual_feature_value == 1 else "not having a name"
-        elif factor_name == "Age Months":
-            phrase = f"being {actual_feature_value} months old"
-        elif factor_name == "Stay Length Days":
-            phrase = f"a stay of {int(actual_feature_value)} days" if actual_feature_value > 0 else "no prior stay length"
-        elif factor_name == "Sex":
-            phrase = f"being {str(actual_feature_value).lower()}"
-        elif factor_name == "Intake Type Harmonized":
-            intake_desc = INTAKE_TYPE_MAP.get(actual_feature_value, str(actual_feature_value).lower())
-            phrase = f"an intake type of '{intake_desc}'"
+        factor_phrases = []
+        if predicted_proba < 0.5:
+            feature_prefix = "Negative_Feature_"
+            factors_title = "Top Factors Decreasing Adoption Probability"
         else:
-            phrase = f"a {factor_name} of '{actual_feature_value}'"
+            feature_prefix = "Positive_Feature_"
+            factors_title = "Top Factors Increasing Adoption Probability"
+
+        for i in range(1, 4):
+            factor_name = pet_data.get(f'{feature_prefix}{i}', '')
+            if not factor_name or pd.isna(factor_name): continue
+            
+            factor_name = factor_name.strip()
+            corrected_column_name = find_closest_column_name(factor_name, pet_data.keys())
+            actual_feature_value = pet_data.get(corrected_column_name, '[N/A]')
+            
+            phrase = ""
+            if factor_name == "Has Name":
+                phrase = "having a name" if actual_feature_value == 1 else "not having a name"
+            elif factor_name == "Age Months":
+                phrase = f"being {actual_feature_value} months old"
+            elif factor_name == "Stay Length Days":
+                phrase = f"a stay of {int(actual_feature_value)} days" if actual_feature_value > 0 else "no prior stay length"
+            elif factor_name == "Sex":
+                phrase = f"being {str(actual_feature_value).lower()}"
+            elif factor_name == "Intake Type Harmonized":
+                intake_desc = INTAKE_TYPE_MAP.get(actual_feature_value, str(actual_feature_value).lower())
+                phrase = f"an intake type of '{intake_desc}'"
+            else:
+                phrase = f"a {factor_name} of '{actual_feature_value}'"
+            
+            if phrase:
+                factor_phrases.append(phrase)
+
+        summary_sentence = ""
+        if len(factor_phrases) == 1:
+            summary_sentence = f"The primary factor is <b>{factor_phrases[0]}</b>."
+        elif len(factor_phrases) == 2:
+            summary_sentence = f"The primary factors are <b>{factor_phrases[0]}</b> and <b>{factor_phrases[1]}</b>."
+        elif len(factor_phrases) == 3:
+            summary_sentence = f"The primary factors are <b>{factor_phrases[0]}</b>, <b>{factor_phrases[1]}</b>, and <b>{factor_phrases[2]}</b>."
         
-        if phrase:
-            factor_phrases.append(phrase)
+        factors_html = f'<div class="text-sm text-gray-800">{summary_sentence}</div>'
 
-    summary_sentence = ""
-    if len(factor_phrases) == 1:
-        summary_sentence = f"The primary factor is <b>{factor_phrases[0]}</b>."
-    elif len(factor_phrases) == 2:
-        summary_sentence = f"The primary factors are <b>{factor_phrases[0]}</b> and <b>{factor_phrases[1]}</b>."
-    elif len(factor_phrases) == 3:
-        summary_sentence = f"The primary factors are <b>{factor_phrases[0]}</b>, <b>{factor_phrases[1]}</b>, and <b>{factor_phrases[2]}</b>."
-    
-    factors_html = f'<div class="text-sm text-gray-800">{summary_sentence}</div>'
+        if pd.notna(recommended_team) and predicted_proba < 0.5:
+            team_html_module = f"""
+            <div class="team-section"><div class="team-header"><div class="team-avatar"><i class="fas fa-hands-helping"></i></div><div class="team-info"><h3>{recommended_team}</h3><div class="team-title">Recommended Team</div></div></div></div>"""
+        else:
+            team_html_module = ""
 
-    if pd.notna(recommended_team) and predicted_proba < 0.5:
-        team_html_module = f"""
-        <div class="team-section"><div class="team-header"><div class="team-avatar"><i class="fas fa-hands-helping"></i></div><div class="team-info"><h3>{recommended_team}</h3><div class="team-title">Recommended Team</div></div></div></div>"""
-    else:
-        team_html_module = ""
+        if predicted_proba < 0.25: progress_color, risk_category = "bg-red-500", "High Risk"
+        elif predicted_proba < 0.5: progress_color, risk_category = "bg-yellow-500", "Medium Risk"
+        else: progress_color, risk_category = "bg-green-500", "Low Risk"
 
-    if predicted_proba < 0.25: progress_color, risk_category = "bg-red-500", "High Risk"
-    elif predicted_proba < 0.5: progress_color, risk_category = "bg-yellow-500", "Medium Risk"
-    else: progress_color, risk_category = "bg-green-500", "Low Risk"
+        return f"""
+        <!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><script src="https://cdn.tailwindcss.com"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        <style>body{{font-family:'Inter',sans-serif;}}.module{{padding:1rem;}}.progress-bar{{height:8px;border-radius:4px;background-color:#e9ecef;}}.progress-fill{{height:100%;border-radius:4px;}}.team-section{{background-color:#f8fafc;border-radius:0.5rem;padding:1rem;box-shadow:0 1px 2px 0 rgba(0,0,0,0.05);}}.team-header{{display:flex;align-items:center;gap:0.75rem;}}.team-avatar{{background-color:#e0f2fe;padding:0.75rem;border-radius:9999px;}}.team-avatar i{{color:#0ea5e9;}}.team-info h3{{font-weight:600;font-size:0.875rem;line-height:1.25rem;}}.team-info .team-title{{font-size:0.75rem;line-height:1rem;color:#64748b;}}</style></head>
+        <body><div class="bg-white p-4 sm:p-6"><div class="mb-3"><h1 class="text-2xl font-bold text-gray-800">Pet Adoptability Dashboard</h1><p class="text-sm text-gray-500">Pet ID: #{animal_id}</p></div>
+        <div class="flex flex-col gap-4 max-w-3xl mx-auto"><div class="bg-gray-50 rounded-lg p-4 shadow-sm module"><h2 class="text-lg font-bold text-gray-700 mb-2">Adoption Probability</h2><h3 class="font-bold text-gray-700">Probability: {formatted_proba}</h3><div class="progress-bar mt-1"><div class="progress-fill {progress_color}" style="width:{progress_bar_width}%"></div></div><div class="mt-3"><span class="{progress_color} text-white px-3 py-0.5 rounded-full text-sm font-medium">{risk_category}</span></div></div>
+        {team_html_module}<div class="bg-gray-50 rounded-lg p-4 shadow-sm module"><h2 class="text-lg font-bold text-gray-700 mb-2">{factors_title}</h2><div class="space-y-2">{factors_html}</div></div></div></div></body></html>
+        """
 
-    return f"""
-    <!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><script src="https://cdn.tailwindcss.com"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>body{{font-family:'Inter',sans-serif;}}.module{{padding:1rem;}}.progress-bar{{height:8px;border-radius:4px;background-color:#e9ecef;}}.progress-fill{{height:100%;border-radius:4px;}}.team-section{{background-color:#f8fafc;border-radius:0.5rem;padding:1rem;box-shadow:0 1px 2px 0 rgba(0,0,0,0.05);}}.team-header{{display:flex;align-items:center;gap:0.75rem;}}.team-avatar{{background-color:#e0f2fe;padding:0.75rem;border-radius:9999px;}}.team-avatar i{{color:#0ea5e9;}}.team-info h3{{font-weight:600;font-size:0.875rem;line-height:1.25rem;}}.team-info .team-title{{font-size:0.75rem;line-height:1rem;color:#64748b;}}</style></head>
-    <body><div class="bg-white p-4 sm:p-6"><div class="mb-3"><h1 class="text-2xl font-bold text-gray-800">Pet Adoptability Dashboard</h1><p class="text-sm text-gray-500">Pet ID: #{animal_id}</p></div>
-    <div class="flex flex-col gap-4 max-w-3xl mx-auto"><div class="bg-gray-50 rounded-lg p-4 shadow-sm module"><h2 class="text-lg font-bold text-gray-700 mb-2">Adoption Probability</h2><h3 class="font-bold text-gray-700">Probability: {formatted_proba}</h3><div class="progress-bar mt-1"><div class="progress-fill {progress_color}" style="width:{progress_bar_width}%"></div></div><div class="mt-3"><span class="{progress_color} text-white px-3 py-0.5 rounded-full text-sm font-medium">{risk_category}</span></div></div>
-    {team_html_module}<div class="bg-gray-50 rounded-lg p-4 shadow-sm module"><h2 class="text-lg font-bold text-gray-700 mb-2">{factors_title}</h2><div class="space-y-2">{factors_html}</div></div></div></div></body></html>
-    """
+    def color_predicted_proba(val):
+        if val < 0.25: return 'background-color: #FF6B6B; color: white'
+        elif val < 0.50: return 'background-color: #FFD166'
+        else: return 'background-color: #06D6A0; color: white'
 
-def color_predicted_proba(val):
-    if val < 0.25: return 'background-color: #FF6B6B; color: white'
-    elif val < 0.50: return 'background-color: #FFD166'
-    else: return 'background-color: #06D6A0; color: white'
-
-# --- 2. MAIN APP WORKFLOW ---
-st.title("🐾 Shelter Pet Priority Board")
-st.write("This board automatically surfaces the pets that need the most attention first.")
-st.markdown("<p style='color: red;'>**Note: 'High Risk' means a pet is at a high risk of NOT being adopted**</p>", unsafe_allow_html=True)
-
-if df is not None:
-    def get_adoptability_category(predicted_proba):
-        if predicted_proba < 0.25: return "High Risk"
-        if predicted_proba < 0.50: return "Medium Risk"
-        return "Low Risk"
-    df['adoptability_category'] = df['predicted_proba'].apply(get_adoptability_category)
+    # --- 2. MAIN APP WORKFLOW ---
+    st.title("🐾 Shelter Pet Priority Board")
+    st.write("This board automatically surfaces the pets that need the most attention first.")
+    st.markdown("<p style='color: red;'>**Note: 'High Risk' means a pet is at a high risk of NOT being adopted**</p>", unsafe_allow_html=True)
 
     st.sidebar.header("Filter Options")
     if 'intake_date' in df.columns:
@@ -213,6 +212,9 @@ if df is not None:
     ]
     
     if selected_risk_categories:
+        df['adoptability_category'] = df['predicted_proba'].apply(
+            lambda p: "High Risk" if p < 0.25 else ("Medium Risk" if p < 0.5 else "Low Risk")
+        )
         filtered_df = filtered_df[filtered_df['adoptability_category'].isin(selected_risk_categories)]
 
     with st.expander("Show Shelter-Wide Summary Dashboard", expanded=True):
@@ -225,7 +227,6 @@ if df is not None:
         st.altair_chart(category_chart, use_container_width=True)
         st.subheader("Distribution of Adoption Probability")
         predicted_proba_hist = alt.Chart(filtered_df).mark_bar().encode(
-            # --- CHANGE: Added axis formatting to show percentages ---
             alt.X("predicted_proba:Q", 
                   bin=alt.Bin(maxbins=20), 
                   title="Adoption Probability",
