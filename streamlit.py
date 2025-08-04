@@ -63,6 +63,35 @@ def find_closest_column_name(name_to_find, column_list):
             return col
     return name_to_find
 
+    pet_id_to_debug = 'A1369699'
+    pet_data_row = df[df['animal_id'] == pet_id_to_debug]
+
+    if not pet_data_row.empty:
+        st.sidebar.subheader(f"Troubleshooting Pet: {pet_id_to_debug}")
+        pet_data = pet_data_row.iloc[0]
+
+        predicted_proba = pet_data.get('predicted_proba', 'N/A')
+        st.sidebar.write(f"**Adoption Probability:** {predicted_proba:.2%}")
+
+        st.sidebar.write("**Top Positive Factors:**")
+        for i in range(1, 4):
+            factor_name = pet_data.get(f'Positive_Feature_{i}')
+            if factor_name and pd.notna(factor_name):
+                corrected_col_name = find_closest_column_name(factor_name, pet_data.keys())
+                value = pet_data.get(corrected_col_name, 'Not Found')
+                st.sidebar.write(f"- **{factor_name.strip()}:** `{value}`")
+
+        st.sidebar.write("**Top Negative Factors:**")
+        for i in range(1, 4):
+            factor_name = pet_data.get(f'Negative_Feature_{i}')
+            if factor_name and pd.notna(factor_name):
+                corrected_col_name = find_closest_column_name(factor_name, pet_data.keys())
+                value = pet_data.get(corrected_col_name, 'Not Found')
+                st.sidebar.write(f"- **{factor_name.strip()}:** `{value}`")
+        st.sidebar.markdown("---") # Add a separator
+    else:
+        st.sidebar.warning(f"Pet ID {pet_id_to_debug} not found.")
+
 def generate_full_dashboard_html(pet_data):
     predicted_proba = pet_data.get('predicted_proba', 0)
     formatted_proba = f"{(predicted_proba * 100):.2f}%"
