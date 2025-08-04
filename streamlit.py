@@ -107,7 +107,7 @@ def generate_full_dashboard_html(pet_data):
             else:
                 phrase = "is not purebred"
         elif factor_name == "Age Months":
-            phrase = f"being {round(actual_feature_value/12,1)} months old"
+            phrase = f"being {round(actual_feature_value/12,2)} years old"
         elif factor_name == "Stay Length Days":
             phrase = f"a stay of {int(actual_feature_value)} days" if actual_feature_value > 0 else "no prior stay length"
         elif factor_name == "Sex":
