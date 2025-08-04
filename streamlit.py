@@ -122,7 +122,7 @@ def generate_full_dashboard_html(pet_data):
             try:
                 num_returns = int(actual_feature_value)
                 if num_returns == 0:
-                    phrase = "not having a previous owner"
+                    phrase = "having been returned 0 times."
                 else:
                     plural_s = "s" if num_returns > 1 else ""
                     phrase = f"having been returned {num_returns} time{plural_s}"
