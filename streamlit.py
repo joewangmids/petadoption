@@ -101,6 +101,11 @@ def generate_full_dashboard_html(pet_data):
             phrase = "having a name" if actual_feature_value == 1 else "not having a name"
         elif factor_name == "Is Returned":
             phrase = "having a previous owner" if actual_feature_value == 1 else "not having a previous owner"
+        elif factor_name == "Is Mix":
+            if str(actual_feature_value).lower() == 'no':
+                phrase = "is purebred"
+            else:
+                phrase = "is not purebred"
         elif factor_name == "Age Months":
             phrase = f"being {actual_feature_value} months old"
         elif factor_name == "Stay Length Days":
