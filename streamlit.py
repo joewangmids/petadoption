@@ -107,6 +107,17 @@ def generate_full_dashboard_html(pet_data):
         elif factor_name == "Intake Type Harmonized":
             intake_desc = INTAKE_TYPE_MAP.get(actual_feature_value, str(actual_feature_value).lower())
             phrase = f"an intake type of '{intake_desc}'"
+        elif factor_name == "Num Returned":
+            try:
+                num_returns = int(actual_feature_value)
+                if num_returns == 0:
+                    phrase = "not having a previous owner"
+                else:
+                    plural_s = "s" if num_returns > 1 else ""
+                    phrase = f"having been returned {num_returns} time{plural_s}"
+            except (ValueError, TypeError):
+                 # Fallback for non-numeric values
+                 phrase = f"a Num Returned value of '{actual_feature_value}'"
         else:
             phrase = f"a {factor_name} of '{actual_feature_value}'"
         
