@@ -98,7 +98,10 @@ def generate_full_dashboard_html(pet_data):
         elif factor_name == "Stay Length Days":
             phrase = f"a stay of {int(actual_feature_value)} days" if actual_feature_value > 0 else "no prior stay length"
         elif factor_name == "Sex":
-            phrase = f"being {str(actual_feature_value).lower()}"
+            if str(actual_feature_value).lower() == 'unknown':
+                phrase = "having an unknown sex"
+            else:
+                phrase = f"being {str(actual_feature_value).lower()}"
         elif factor_name == "Intake Type Harmonized":
             intake_desc = INTAKE_TYPE_MAP.get(actual_feature_value, str(actual_feature_value).lower())
             phrase = f"an intake type of '{intake_desc}'"
